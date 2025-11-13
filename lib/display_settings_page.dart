@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:dbus/dbus.dart';
+import 'package:antidote/glassmorphic_container.dart';
 
 class DisplaySettingsPage extends StatefulWidget {
   const DisplaySettingsPage({super.key});
@@ -40,52 +41,424 @@ class DisplayResolution {
 
 class _DisplaySettingsPageState extends State<DisplaySettingsPage> {
   late DBusClient _sysbus;
-  Timer? _updateTimer;
+  bool _isInitialized = false;
+  String? _cachedDisplayName; // Cache display name to avoid repeated lookups
 
   // Display states
   String _orientation = 'Landscape';
   DisplayResolution? _currentResolution;
+  DisplayResolution? _nativeResolution; // True/native screen resolution
   List<DisplayResolution> _availableResolutions = [];
   String _refreshRate = '59.88 Hz';
   int _scale = 100; // 100 or 200
   bool _fractionalScaling = false;
   bool _nightLight = false;
+  String _displayServer = 'Unknown'; // 'X11' or 'Wayland'
+  
+  // Brightness states
+  double _brightness = 100.0; // 0-100
+  double _maxBrightness = 100.0;
+  bool _brightnessSupported = false;
+  String _brightnessMethod = 'none'; // 'brightnessctl', 'xrandr', 'wayland', 'dbus'
 
   @override
   void initState() {
     super.initState();
     _sysbus = DBusClient.system();
     _initDisplaySettings();
-    _updateTimer = Timer.periodic(
-      const Duration(seconds: 3),
-      (_) => _refreshDisplayInfo(),
-    );
   }
 
   @override
   void dispose() {
-    _updateTimer?.cancel();
     _sysbus.close();
     super.dispose();
   }
 
   Future<void> _initDisplaySettings() async {
+    if (_isInitialized) return;
+    
+    await _detectDisplayServer();
     await _refreshDisplayInfo();
+    await _initBrightness();
+    
+    if (mounted) {
+      setState(() {
+        _isInitialized = true;
+      });
+    }
+  }
+
+  Future<void> _detectDisplayServer() async {
+    try {
+      // Check WAYLAND_DISPLAY environment variable
+      final waylandDisplay = Platform.environment['WAYLAND_DISPLAY'];
+      if (waylandDisplay != null && waylandDisplay.isNotEmpty) {
+        if (mounted) {
+          setState(() => _displayServer = 'Wayland');
+        }
+        return;
+      }
+
+      // Check XDG_SESSION_TYPE
+      final sessionType = Platform.environment['XDG_SESSION_TYPE'];
+      if (sessionType != null) {
+        if (mounted) {
+          setState(() => _displayServer = sessionType.toLowerCase() == 'wayland' ? 'Wayland' : 'X11');
+        }
+        return;
+      }
+
+      // Fallback: try to detect via xrandr (if it works, it's X11)
+      try {
+        final result = await Process.run('xrandr', ['--version']);
+        if (result.exitCode == 0) {
+          if (mounted) {
+            setState(() => _displayServer = 'X11');
+          }
+        }
+      } catch (_) {
+        // If xrandr doesn't work, likely Wayland
+        if (mounted) {
+          setState(() => _displayServer = 'Wayland');
+        }
+      }
+    } catch (e) {
+      debugPrint('Detect display server error: $e');
+      if (mounted) {
+        setState(() => _displayServer = 'Unknown');
+      }
+    }
   }
 
   Future<void> _refreshDisplayInfo() async {
     if (!mounted) return;
+    if (_isInitialized) return; // Only fetch once
     try {
-      await _getCurrentDisplayInfo();
-      await _getAvailableResolutions();
+      if (_displayServer == 'Wayland') {
+        await _getWaylandDisplayInfo();
+        await _getWaylandAvailableResolutions();
+      } else {
+        await _getX11DisplayInfo();
+      }
       await _getNightLightStatus();
     } catch (e) {
       debugPrint('Display refresh error: $e');
     }
   }
 
-  Future<void> _getCurrentDisplayInfo() async {
+  Future<String?> _getDisplayName() async {
+    // Return cached display name if available
+    if (_cachedDisplayName != null) {
+      return _cachedDisplayName;
+    }
+    
     try {
+      if (_displayServer == 'X11') {
+        final output = await Process.run('xrandr', ['--listmonitors']);
+        if (output.exitCode == 0) {
+          final lines = output.stdout.toString().split('\n');
+          for (final line in lines) {
+            if (line.contains('+') && line.contains('connected')) {
+              final match = RegExp(r'(\S+)\s+connected').firstMatch(line);
+              if (match != null) {
+                _cachedDisplayName = match.group(1);
+                return _cachedDisplayName;
+              }
+            }
+          }
+        }
+        
+        // Fallback: try xrandr without --listmonitors
+        final xrandrResult = await Process.run('xrandr', []);
+        if (xrandrResult.exitCode == 0) {
+          final xrandrLines = xrandrResult.stdout.toString().split('\n');
+          for (final line in xrandrLines) {
+            if (line.contains(' connected')) {
+              final match = RegExp(r'^(\S+)\s+connected').firstMatch(line);
+              if (match != null) {
+                _cachedDisplayName = match.group(1);
+                return _cachedDisplayName;
+              }
+            }
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('Get display name error: $e');
+    }
+    
+    return null;
+  }
+  
+  Future<void> _initBrightness() async {
+    try {
+      // xrandr --brightness is the PRIMARY method (works for all displays without permissions)
+      // It uses software gamma adjustment, so it works on X11 and can work on Wayland if xrandr is available
+      // This should be tried first since it doesn't require special permissions
+      try {
+        // Check if xrandr is available
+        final xrandrCheck = await Process.run('xrandr', ['--version']);
+        if (xrandrCheck.exitCode == 0) {
+          final displayName = await _getDisplayName();
+          if (displayName != null) {
+            // xrandr brightness is 0.0-1.0, we'll use it as percentage
+            // This works for laptops, external monitors, and TVs without special permissions
+            if (mounted) {
+              setState(() {
+                _brightness = 100.0; // Default to 100%
+                _maxBrightness = 100.0;
+                _brightnessSupported = true;
+                _brightnessMethod = 'xrandr';
+              });
+            }
+            return;
+          } else {
+            debugPrint('xrandr available but no display name found');
+          }
+        }
+      } catch (e) {
+        debugPrint('xrandr brightness failed: $e');
+      }
+      
+      // Try gsettings for Wayland/GNOME (works without permissions)
+      try {
+        final brightnessResult = await Process.run('gsettings', [
+          'get',
+          'org.gnome.settings-daemon.plugins.power',
+          'brightness',
+        ]);
+        if (brightnessResult.exitCode == 0) {
+          final brightnessStr = brightnessResult.stdout.toString().trim();
+          final brightness = int.tryParse(brightnessStr) ?? 100;
+          if (mounted) {
+            setState(() {
+              _brightness = brightness.toDouble();
+              _maxBrightness = 100.0;
+              _brightnessSupported = true;
+              _brightnessMethod = 'wayland';
+            });
+          }
+          return;
+        }
+      } catch (e) {
+        debugPrint('gsettings brightness failed: $e');
+      }
+      
+      // Try D-Bus for GNOME Settings Daemon (works for all displays without permissions)
+      try {
+        final power = DBusRemoteObject(
+          _sysbus,
+          name: 'org.gnome.SettingsDaemon.Power',
+          path: DBusObjectPath('/org/gnome/SettingsDaemon/Power'),
+        );
+        
+        // Try to get brightness from ScreenBrightness interface
+        try {
+          final brightness = await power.getProperty(
+            'org.gnome.SettingsDaemon.Power.Screen',
+            'Brightness',
+          );
+          if (brightness is DBusUint32) {
+            if (mounted) {
+              setState(() {
+                _brightness = brightness.value.toDouble();
+                _maxBrightness = 100.0;
+                _brightnessSupported = true;
+                _brightnessMethod = 'dbus';
+              });
+            }
+            return;
+          }
+        } catch (e) {
+          debugPrint('D-Bus Screen brightness failed: $e');
+          // Try alternative D-Bus path
+          try {
+            final brightness = await power.getProperty(
+              'org.freedesktop.UPower',
+              'Brightness',
+            );
+            if (brightness is DBusUint32 || brightness is DBusDouble) {
+              final value = brightness is DBusUint32 
+                  ? brightness.value.toDouble() 
+                  : (brightness as DBusDouble).value;
+              if (mounted) {
+                setState(() {
+                  _brightness = value;
+                  _maxBrightness = 100.0;
+                  _brightnessSupported = true;
+                  _brightnessMethod = 'dbus';
+                });
+              }
+              return;
+            }
+          } catch (e2) {
+            debugPrint('D-Bus UPower brightness failed: $e2');
+          }
+        }
+      } catch (e) {
+        debugPrint('D-Bus power object failed: $e');
+      }
+      
+      // Try brightnessctl last (only if it works without special permissions)
+      // Skip if it requires root or special permissions
+      try {
+        final maxResult = await Process.run('brightnessctl', ['m']);
+        final currentResult = await Process.run('brightnessctl', ['g']);
+        if (maxResult.exitCode == 0 && currentResult.exitCode == 0) {
+          final currentValue = currentResult.stdout.toString().trim();
+          // Test if we can actually set brightness (check permissions)
+          // Try to set to current value (should succeed if permissions are OK)
+          final testResult = await Process.run('brightnessctl', ['s', currentValue]);
+          if (testResult.exitCode == 0) {
+            // Permissions are OK, use brightnessctl
+            final max = double.tryParse(maxResult.stdout.toString().trim()) ?? 100.0;
+            final current = double.tryParse(currentValue) ?? 100.0;
+            if (max > 0) {
+              if (mounted) {
+                setState(() {
+                  _maxBrightness = max;
+                  _brightness = (current / max * 100).clamp(0.0, 100.0);
+                  _brightnessSupported = true;
+                  _brightnessMethod = 'brightnessctl';
+                });
+              }
+              return;
+            }
+          } else {
+            // Check if it's a permission error
+            final errorOutput = testResult.stderr.toString();
+            if (errorOutput.contains('Permission') || errorOutput.contains('root')) {
+              debugPrint('brightnessctl requires permissions, skipping');
+            }
+          }
+        }
+      } catch (e) {
+        debugPrint('brightnessctl failed: $e');
+      }
+      
+      // No brightness control available
+      debugPrint('No brightness control method available');
+      if (mounted) {
+        setState(() {
+          _brightnessSupported = false;
+        });
+      }
+    } catch (e) {
+      debugPrint('Init brightness error: $e');
+      if (mounted) {
+        setState(() {
+          _brightnessSupported = false;
+        });
+      }
+    }
+  }
+  
+  Future<void> _setBrightness(double value) async {
+    if (!_brightnessSupported) {
+      debugPrint('Brightness not supported, cannot set to $value');
+      return;
+    }
+    
+    try {
+      if (_brightnessMethod == 'brightnessctl') {
+        // brightnessctl uses absolute values, not percentages
+        final absoluteValue = (value / 100.0 * _maxBrightness).round();
+        final result = await Process.run('brightnessctl', ['s', absoluteValue.toString()]);
+        if (result.exitCode != 0) {
+          debugPrint('brightnessctl set failed: ${result.stderr}');
+        }
+      } else if (_brightnessMethod == 'wayland') {
+        // Use gsettings for GNOME Wayland
+        final result = await Process.run('gsettings', [
+          'set',
+          'org.gnome.settings-daemon.plugins.power',
+          'brightness',
+          value.round().toString(),
+        ]);
+        if (result.exitCode != 0) {
+          debugPrint('gsettings brightness set failed: ${result.stderr}');
+        }
+      } else if (_brightnessMethod == 'dbus') {
+        // Use D-Bus to set brightness via GNOME Settings Daemon
+        try {
+          final power = DBusRemoteObject(
+            _sysbus,
+            name: 'org.gnome.SettingsDaemon.Power',
+            path: DBusObjectPath('/org/gnome/SettingsDaemon/Power'),
+          );
+          
+          try {
+            await power.setProperty(
+              'org.gnome.SettingsDaemon.Power.Screen',
+              'Brightness',
+              DBusUint32(value.round().clamp(0, 100)),
+            );
+          } catch (e) {
+            debugPrint('D-Bus setProperty failed: $e');
+            // Try alternative method
+            try {
+              await power.callMethod(
+                'org.gnome.SettingsDaemon.Power.Screen',
+                'SetBrightness',
+                [DBusUint32(value.round().clamp(0, 100))],
+                replySignature: DBusSignature(''),
+              );
+            } catch (e2) {
+              debugPrint('D-Bus callMethod failed: $e2');
+              // Fallback to gsettings
+              await Process.run('gsettings', [
+                'set',
+                'org.gnome.settings-daemon.plugins.power',
+                'brightness',
+                value.round().toString(),
+              ]);
+            }
+          }
+        } catch (e) {
+          debugPrint('D-Bus brightness set error: $e');
+          // Fallback to gsettings
+          await Process.run('gsettings', [
+            'set',
+            'org.gnome.settings-daemon.plugins.power',
+            'brightness',
+            value.round().toString(),
+          ]);
+        }
+      } else if (_brightnessMethod == 'xrandr') {
+        // xrandr brightness works for all displays (laptops, external monitors, TVs)
+        // Uses software gamma adjustment (0.0-1.0)
+        final displayName = await _getDisplayName();
+        if (displayName != null) {
+          final brightnessValue = (value / 100.0).clamp(0.0, 1.0);
+          final result = await Process.run('xrandr', [
+            '--output',
+            displayName,
+            '--brightness',
+            brightnessValue.toStringAsFixed(2),
+          ]);
+          if (result.exitCode != 0) {
+            debugPrint('xrandr brightness set failed: ${result.stderr}');
+          }
+        } else {
+          debugPrint('xrandr brightness: display name is null');
+        }
+      }
+      
+      if (mounted) {
+        setState(() {
+          _brightness = value;
+        });
+      }
+    } catch (e) {
+      debugPrint('Set brightness error: $e');
+    }
+  }
+
+  Future<void> _getX11DisplayInfo() async {
+    try {
+      // Get native resolution first (from EDID or modeline)
+      await _getX11NativeResolution();
+      
       // Use xrandr to get current display info
       final result = await Process.run('xrandr', ['--current']);
       if (result.exitCode == 0) {
@@ -155,34 +528,258 @@ class _DisplaySettingsPageState extends State<DisplaySettingsPage> {
           }
         }
       }
+      
+      // Get available resolutions
+      await _getX11AvailableResolutions();
     } catch (e) {
-      debugPrint('Get display info error: $e');
-      // Set defaults if xrandr fails
-      if (_currentResolution == null) {
-        setState(() {
-          // Try to find default from available list first
-          DisplayResolution? matching;
-          if (_availableResolutions.isNotEmpty) {
-            try {
-              matching = _availableResolutions.firstWhere(
-                (r) => r.width == 1680 && r.height == 1050,
-              );
-            } catch (_) {
-              // Not found, create new one
-            }
-          }
-          _currentResolution = matching ?? DisplayResolution(
-            width: 1680,
-            height: 1050,
-            aspectRatio: '16 : 10',
-            mode: '1680x1050',
-          );
-        });
-      }
+      debugPrint('Get X11 display info error: $e');
     }
   }
 
-  Future<void> _getAvailableResolutions() async {
+  Future<void> _getX11NativeResolution() async {
+    try {
+      // Try to get native resolution from xrandr --verbose (shows preferred mode)
+      final result = await Process.run('xrandr', ['--verbose']);
+      if (result.exitCode == 0) {
+        final output = result.stdout.toString();
+        final lines = output.split('\n');
+        
+        String? currentDisplay;
+        for (final line in lines) {
+          // Find connected display
+          if (line.contains(' connected')) {
+            final match = RegExp(r'^(\S+)\s+connected').firstMatch(line);
+            if (match != null) {
+              currentDisplay = match.group(1);
+            }
+          }
+          
+          // Look for preferred mode or highest resolution
+          if (currentDisplay != null && line.contains('$currentDisplay connected')) {
+            // Extract native resolution from EDID info or preferred mode
+            final preferredMatch = RegExp(r'(\d+)x(\d+)\s+.*preferred').firstMatch(line);
+            if (preferredMatch != null) {
+              final width = int.tryParse(preferredMatch.group(1) ?? '') ?? 0;
+              final height = int.tryParse(preferredMatch.group(2) ?? '') ?? 0;
+              if (width > 0 && height > 0) {
+                final gcd = _gcd(width, height);
+                final aspectW = width ~/ gcd;
+                final aspectH = height ~/ gcd;
+                final aspectRatio = '$aspectW : $aspectH';
+                
+                if (mounted) {
+                  setState(() {
+                    _nativeResolution = DisplayResolution(
+                      width: width,
+                      height: height,
+                      aspectRatio: aspectRatio,
+                      mode: '${width}x${height}',
+                    );
+                  });
+                }
+                return;
+              }
+            }
+          }
+        }
+        
+        // Fallback: use the highest available resolution as native
+        final xrandrResult = await Process.run('xrandr', []);
+        if (xrandrResult.exitCode == 0) {
+          final xrandrOutput = xrandrResult.stdout.toString();
+          final xrandrLines = xrandrOutput.split('\n');
+          int maxWidth = 0;
+          int maxHeight = 0;
+          
+          for (final line in xrandrLines) {
+            final match = RegExp(r'\s+(\d+)x(\d+)\s+').firstMatch(line);
+            if (match != null) {
+              final width = int.tryParse(match.group(1) ?? '') ?? 0;
+              final height = int.tryParse(match.group(2) ?? '') ?? 0;
+              if (width * height > maxWidth * maxHeight) {
+                maxWidth = width;
+                maxHeight = height;
+              }
+            }
+          }
+          
+          if (maxWidth > 0 && maxHeight > 0) {
+            final gcd = _gcd(maxWidth, maxHeight);
+            final aspectW = maxWidth ~/ gcd;
+            final aspectH = maxHeight ~/ gcd;
+            final aspectRatio = '$aspectW : $aspectH';
+            
+            if (mounted) {
+              setState(() {
+                _nativeResolution = DisplayResolution(
+                  width: maxWidth,
+                  height: maxHeight,
+                  aspectRatio: aspectRatio,
+                  mode: '${maxWidth}x${maxHeight}',
+          );
+        });
+      }
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('Get X11 native resolution error: $e');
+    }
+  }
+
+  Future<void> _getWaylandDisplayInfo() async {
+    try {
+      // Try wlr-randr first (for wlroots-based compositors)
+      try {
+        final result = await Process.run('wlr-randr', []);
+        if (result.exitCode == 0) {
+          await _parseWlrRandrOutput(result.stdout.toString());
+          return;
+        }
+      } catch (_) {}
+
+      // Try gsettings for GNOME on Wayland
+      try {
+        await _getWaylandInfoFromGsettings();
+      } catch (_) {}
+
+      // Try DBus for Wayland
+      try {
+        await _getWaylandInfoFromDBus();
+      } catch (_) {}
+    } catch (e) {
+      debugPrint('Get Wayland display info error: $e');
+    }
+  }
+
+  Future<void> _parseWlrRandrOutput(String output) async {
+    try {
+      final lines = output.split('\n');
+      String? currentOutput;
+      int? nativeWidth, nativeHeight;
+      int? currentWidth, currentHeight;
+      String? refreshRate;
+
+      for (final line in lines) {
+        // Find output name
+        if (line.trim().isNotEmpty && !line.startsWith(' ')) {
+          currentOutput = line.trim().split(' ').first;
+          continue;
+        }
+
+        if (currentOutput != null) {
+          // Parse resolution
+          final resMatch = RegExp(r'(\d+)x(\d+)\s+px').firstMatch(line);
+          if (resMatch != null) {
+            final width = int.tryParse(resMatch.group(1) ?? '') ?? 0;
+            final height = int.tryParse(resMatch.group(2) ?? '') ?? 0;
+            if (width > 0 && height > 0) {
+              if (line.contains('current')) {
+                currentWidth = width;
+                currentHeight = height;
+              } else if (line.contains('preferred') || nativeWidth == null) {
+                nativeWidth = width;
+                nativeHeight = height;
+              }
+            }
+          }
+
+          // Parse refresh rate
+          final refreshMatch = RegExp(r'(\d+\.?\d*)\s*Hz').firstMatch(line);
+          if (refreshMatch != null) {
+            refreshRate = refreshMatch.group(1);
+          }
+        }
+      }
+
+      if (nativeWidth != null && nativeHeight != null) {
+        final nw = nativeWidth;
+        final nh = nativeHeight;
+        final gcd = _gcd(nw, nh);
+        final aspectW = nw ~/ gcd;
+        final aspectH = nh ~/ gcd;
+        final aspectRatio = '$aspectW : $aspectH';
+
+        if (mounted) {
+          setState(() {
+            _nativeResolution = DisplayResolution(
+              width: nw,
+              height: nh,
+              aspectRatio: aspectRatio,
+              mode: '${nw}x${nh}',
+            );
+            
+            if (currentWidth != null && currentHeight != null) {
+              final cw = currentWidth;
+              final ch = currentHeight;
+              _currentResolution = DisplayResolution(
+                width: cw,
+                height: ch,
+                aspectRatio: aspectRatio,
+                mode: '${cw}x${ch}',
+              );
+            } else {
+              _currentResolution = _nativeResolution;
+            }
+            
+            if (refreshRate != null) {
+              _refreshRate = '$refreshRate Hz';
+            }
+          });
+        }
+      }
+    } catch (e) {
+      debugPrint('Parse wlr-randr output error: $e');
+    }
+  }
+
+  Future<void> _getWaylandInfoFromGsettings() async {
+    try {
+      // Try to get resolution from gsettings or mutter
+      final scaleResult = await Process.run('gsettings', [
+        'get',
+        'org.gnome.desktop.interface',
+        'text-scaling-factor',
+      ]);
+      if (scaleResult.exitCode == 0) {
+        final scaleStr = scaleResult.stdout.toString().trim();
+        final scaleValue = double.tryParse(scaleStr) ?? 1.0;
+        if (mounted) {
+          setState(() => _scale = (scaleValue * 100).round());
+        }
+      }
+    } catch (e) {
+      debugPrint('Get Wayland info from gsettings error: $e');
+    }
+  }
+
+  Future<void> _getWaylandInfoFromDBus() async {
+    try {
+      // Try to get display info from Mutter/GNOME via DBus
+      final mutter = DBusRemoteObject(
+        _sysbus,
+        name: 'org.gnome.Mutter.DisplayConfig',
+        path: DBusObjectPath('/org/gnome/Mutter/DisplayConfig'),
+      );
+      
+      // Get current state
+      // Note: Parsing Mutter DisplayConfig state is complex
+      // We'll rely on wlr-randr or gsettings instead
+      await mutter.callMethod(
+        'org.gnome.Mutter.DisplayConfig',
+        'GetCurrentState',
+        [],
+        replySignature: DBusSignature('uua(uxiiiiiu)a(uxiiiiiu)'),
+      );
+      
+      // Parse the state to get resolutions
+      // This is complex, so we'll use a simpler approach
+    } catch (e) {
+      debugPrint('Get Wayland info from DBus error: $e');
+    }
+  }
+
+  Future<void> _getX11AvailableResolutions() async {
     try {
       final result = await Process.run('xrandr', []);
       if (result.exitCode == 0) {
@@ -235,11 +832,149 @@ class _DisplaySettingsPageState extends State<DisplaySettingsPage> {
               );
               _currentResolution = matching;
             }
+            
+            // If native resolution not set, use the highest as native
+            if (_nativeResolution == null && resolutions.isNotEmpty) {
+              _nativeResolution = resolutions.first;
+            }
           });
         }
       }
     } catch (e) {
-      debugPrint('Get resolutions error: $e');
+      debugPrint('Get X11 resolutions error: $e');
+    }
+  }
+
+  Future<void> _getWaylandAvailableResolutions() async {
+    try {
+      // Try wlr-randr for wlroots-based compositors
+      try {
+        final result = await Process.run('wlr-randr', []);
+        if (result.exitCode == 0) {
+          await _parseWlrRandrModes(result.stdout.toString());
+          return;
+        }
+      } catch (_) {}
+
+      // For GNOME Wayland, resolutions are managed by Mutter
+      // We can't easily get all available modes, so we'll show common ones
+      if (_nativeResolution != null) {
+        _generateCommonResolutions(_nativeResolution!);
+      }
+    } catch (e) {
+      debugPrint('Get Wayland resolutions error: $e');
+    }
+  }
+
+  Future<void> _parseWlrRandrModes(String output) async {
+    try {
+      final lines = output.split('\n');
+      final List<DisplayResolution> resolutions = [];
+      String? currentOutput;
+
+      for (final line in lines) {
+        if (line.trim().isNotEmpty && !line.startsWith(' ')) {
+          currentOutput = line.trim().split(' ').first;
+          continue;
+        }
+
+        if (currentOutput != null) {
+          // Parse mode lines like "  1920x1080 px, 60.000000 Hz (preferred)"
+          final modeMatch = RegExp(r'(\d+)x(\d+)\s+px').firstMatch(line);
+          if (modeMatch != null) {
+            final width = int.tryParse(modeMatch.group(1) ?? '') ?? 0;
+            final height = int.tryParse(modeMatch.group(2) ?? '') ?? 0;
+
+            if (width > 0 && height > 0) {
+              final gcd = _gcd(width, height);
+              final aspectW = width ~/ gcd;
+              final aspectH = height ~/ gcd;
+              final aspectRatio = '$aspectW : $aspectH';
+
+              if (!resolutions.any((r) => r.width == width && r.height == height)) {
+                resolutions.add(DisplayResolution(
+                  width: width,
+                  height: height,
+                  aspectRatio: aspectRatio,
+                  mode: '${width}x${height}',
+                ));
+              }
+            }
+          }
+        }
+      }
+
+      // Sort by resolution (largest first)
+      resolutions.sort((a, b) {
+        final aArea = a.width * a.height;
+        final bArea = b.width * b.height;
+        return bArea.compareTo(aArea);
+      });
+
+      if (mounted) {
+        setState(() {
+          _availableResolutions = resolutions;
+        });
+      }
+    } catch (e) {
+      debugPrint('Parse wlr-randr modes error: $e');
+    }
+  }
+
+  void _generateCommonResolutions(DisplayResolution native) {
+    // Generate common resolutions based on native resolution
+    final List<DisplayResolution> resolutions = [native];
+    
+    // Add common fractional resolutions
+    final commonRatios = [0.75, 0.5, 0.25];
+    for (final ratio in commonRatios) {
+      final width = (native.width * ratio).round();
+      final height = (native.height * ratio).round();
+      if (width > 640 && height > 480) {
+        final gcd = _gcd(width, height);
+        final aspectW = width ~/ gcd;
+        final aspectH = height ~/ gcd;
+        resolutions.add(DisplayResolution(
+          width: width,
+          height: height,
+          aspectRatio: '$aspectW : $aspectH',
+          mode: '${width}x${height}',
+        ));
+      }
+    }
+    
+    // Add standard resolutions that are smaller than native
+    final standardResolutions = [
+      [3840, 2160], [2560, 1440], [1920, 1080], [1680, 1050],
+      [1600, 900], [1440, 900], [1366, 768], [1280, 720], [1024, 768]
+    ];
+    
+    for (final res in standardResolutions) {
+      if (res[0] <= native.width && res[1] <= native.height) {
+        final gcd = _gcd(res[0], res[1]);
+        final aspectW = res[0] ~/ gcd;
+        final aspectH = res[1] ~/ gcd;
+        if (!resolutions.any((r) => r.width == res[0] && r.height == res[1])) {
+          resolutions.add(DisplayResolution(
+            width: res[0],
+            height: res[1],
+            aspectRatio: '$aspectW : $aspectH',
+            mode: '${res[0]}x${res[1]}',
+          ));
+        }
+      }
+    }
+    
+    resolutions.sort((a, b) {
+      final aArea = a.width * a.height;
+      final bArea = b.width * b.height;
+      return bArea.compareTo(aArea);
+    });
+    
+    if (mounted) {
+      setState(() {
+        _availableResolutions = resolutions;
+      });
     }
   }
 
@@ -286,55 +1021,14 @@ class _DisplaySettingsPageState extends State<DisplaySettingsPage> {
   }
 
   Future<void> _setOrientation(String orientation) async {
+    // Only set if orientation actually changed
+    if (_orientation == orientation) {
+      return;
+    }
+    
     try {
-      final output = await Process.run('xrandr', ['--listmonitors']);
-      if (output.exitCode == 0) {
-        final lines = output.stdout.toString().split('\n');
-        String? displayName;
-        for (final line in lines) {
-          if (line.contains('+') && line.contains('connected')) {
-            final match = RegExp(r'(\S+)\s+connected').firstMatch(line);
-            if (match != null) {
-              displayName = match.group(1);
-              break;
-            }
-          }
-        }
-
-        if (displayName == null) {
-          // Try to get primary display
-          final primaryResult = await Process.run('xrandr', ['--listmonitors']);
-          if (primaryResult.exitCode == 0) {
-            final primaryLines = primaryResult.stdout.toString().split('\n');
-            for (final line in primaryLines) {
-              if (line.contains('*')) {
-                final match = RegExp(r'(\S+)').firstMatch(line);
-                if (match != null) {
-                  displayName = match.group(1);
-                  break;
-                }
-              }
-            }
-          }
-        }
-
-        if (displayName == null) {
-          // Fallback: try common display names
-          final xrandrResult = await Process.run('xrandr', []);
-          if (xrandrResult.exitCode == 0) {
-            final xrandrLines = xrandrResult.stdout.toString().split('\n');
-            for (final line in xrandrLines) {
-              if (line.contains(' connected')) {
-                final match = RegExp(r'^(\S+)\s+connected').firstMatch(line);
-                if (match != null) {
-                  displayName = match.group(1);
-                  break;
-                }
-              }
-            }
-          }
-        }
-
+      if (_displayServer == 'X11') {
+        final displayName = await _getDisplayName();
         if (displayName != null && _currentResolution != null) {
           String rotation = 'normal';
           if (orientation == 'Portrait') {
@@ -350,7 +1044,9 @@ class _DisplaySettingsPageState extends State<DisplaySettingsPage> {
             rotation,
           ]);
 
+          if (mounted) {
           setState(() => _orientation = orientation);
+          }
         }
       }
     } catch (e) {
@@ -359,38 +1055,15 @@ class _DisplaySettingsPageState extends State<DisplaySettingsPage> {
   }
 
   Future<void> _setResolution(DisplayResolution resolution) async {
+    // Only set if resolution actually changed
+    if (_currentResolution?.width == resolution.width && 
+        _currentResolution?.height == resolution.height) {
+      return;
+    }
+    
     try {
-      final output = await Process.run('xrandr', ['--listmonitors']);
-      String? displayName;
-      if (output.exitCode == 0) {
-        final lines = output.stdout.toString().split('\n');
-        for (final line in lines) {
-          if (line.contains('+') && line.contains('connected')) {
-            final match = RegExp(r'(\S+)\s+connected').firstMatch(line);
-            if (match != null) {
-              displayName = match.group(1);
-              break;
-            }
-          }
-        }
-      }
-
-      if (displayName == null) {
-        final xrandrResult = await Process.run('xrandr', []);
-        if (xrandrResult.exitCode == 0) {
-          final xrandrLines = xrandrResult.stdout.toString().split('\n');
-          for (final line in xrandrLines) {
-            if (line.contains(' connected')) {
-              final match = RegExp(r'^(\S+)\s+connected').firstMatch(line);
-              if (match != null) {
-                displayName = match.group(1);
-                break;
-              }
-            }
-          }
-        }
-      }
-
+      if (_displayServer == 'X11') {
+        final displayName = await _getDisplayName();
       if (displayName != null) {
         await Process.run('xrandr', [
           '--output',
@@ -399,7 +1072,26 @@ class _DisplaySettingsPageState extends State<DisplaySettingsPage> {
           resolution.mode,
         ]);
 
+          if (mounted) {
         setState(() => _currentResolution = resolution);
+          }
+        }
+      } else if (_displayServer == 'Wayland') {
+        // For Wayland, try wlr-randr or other methods
+        try {
+          await Process.run('wlr-randr', [
+            '--output',
+            'eDP-1', // Common laptop display name, may need detection
+            '--mode',
+            resolution.mode,
+          ]);
+          if (mounted) {
+            setState(() => _currentResolution = resolution);
+          }
+        } catch (_) {
+          // Wayland resolution changes are typically managed by compositor
+          debugPrint('Wayland resolution change not supported via command line');
+        }
       }
     } catch (e) {
       debugPrint('Set resolution error: $e');
@@ -465,30 +1157,30 @@ class _DisplaySettingsPageState extends State<DisplaySettingsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color.fromARGB(0, 0, 0, 0),
+      backgroundColor: Colors.transparent,
       body: Center(
-        child: Container(
-          width: 500,
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
+        child: GlassmorphicContainer(
+          width: 600,
+          height: MediaQuery.of(context).size.height * 0.85,
+          borderRadius: 24,
+          linearGradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
               colors: [
-                Color.fromARGB(220, 28, 32, 44),
-                Color.fromARGB(180, 18, 20, 30),
+              const Color.fromARGB(40, 120, 180, 240).withOpacity(0.12),
+              const Color.fromARGB(30, 100, 150, 220).withOpacity(0.08),
+              const Color.fromARGB(25, 80, 130, 200).withOpacity(0.06),
               ],
+            stops: const [0.0, 0.5, 1.0],
+          ),
+          border: 1.2,
+          blur: 26,
+          borderGradient: const LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.circular(36),
-            border: Border.all(color: Colors.white.withOpacity(0.06)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.45),
-                blurRadius: 30,
-                offset: const Offset(0, 8),
-              ),
-            ],
+            colors: [],
           ),
+          padding: const EdgeInsets.all(32),
           child: SingleChildScrollView(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -496,9 +1188,10 @@ class _DisplaySettingsPageState extends State<DisplaySettingsPage> {
                 const Text(
                   'Display',
                   style: TextStyle(
-                    fontSize: 24,
+                    fontSize: 32,
                     fontWeight: FontWeight.bold,
                     color: Colors.white,
+                    letterSpacing: 0.5,
                   ),
                 ),
                 const SizedBox(height: 32),
@@ -513,6 +1206,11 @@ class _DisplaySettingsPageState extends State<DisplaySettingsPage> {
                 // Resolution
                 _buildResolutionDropdown(),
                 const SizedBox(height: 24),
+                // Brightness
+                if (_brightnessSupported) ...[
+                  _buildBrightnessSlider(),
+                  const SizedBox(height: 24),
+                ],
                 // Refresh Rate (read-only)
                 _buildReadOnlySetting('Refresh Rate', _refreshRate),
                 const SizedBox(height: 24),
@@ -555,18 +1253,31 @@ class _DisplaySettingsPageState extends State<DisplaySettingsPage> {
           ),
         ),
         const SizedBox(height: 8),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.05),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.white.withOpacity(0.1)),
+        GlassmorphicContainer(
+          width: double.infinity,
+          height: 56,
+          borderRadius: 16,
+          linearGradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              const Color.fromARGB(30, 150, 200, 255).withOpacity(0.1),
+              const Color.fromARGB(20, 120, 170, 240).withOpacity(0.06),
+            ],
           ),
+          border: 1.2,
+          blur: 26,
+          borderGradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [],
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           child: DropdownButton<String>(
             value: value,
             isExpanded: true,
             underline: const SizedBox(),
-            dropdownColor: const Color.fromARGB(255, 45, 45, 45),
+            dropdownColor: const Color.fromARGB(255, 18, 22, 32),
             style: const TextStyle(color: Colors.white),
             items: options.map((option) {
               return DropdownMenuItem<String>(
@@ -593,6 +1304,9 @@ class _DisplaySettingsPageState extends State<DisplaySettingsPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
         const Text(
           'Resolution',
           style: TextStyle(
@@ -601,19 +1315,81 @@ class _DisplaySettingsPageState extends State<DisplaySettingsPage> {
             color: Colors.white,
           ),
         ),
-        const SizedBox(height: 8),
+            if (_displayServer != 'Unknown')
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.05),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.white.withOpacity(0.1)),
+                  color: _displayServer == 'Wayland'
+                      ? Colors.blue.withOpacity(0.2)
+                      : Colors.green.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: _displayServer == 'Wayland'
+                        ? Colors.blue.withOpacity(0.5)
+                        : Colors.green.withOpacity(0.5),
+                    width: 1,
+                  ),
+                ),
+                child: Text(
+                  _displayServer,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: _displayServer == 'Wayland'
+                        ? Colors.blueAccent
+                        : Colors.greenAccent,
+                  ),
+                ),
+              ),
+          ],
+        ),
+        if (_nativeResolution != null) ...[
+          const SizedBox(height: 6),
+          Row(
+            children: [
+              Icon(
+                Icons.desktop_windows,
+                size: 14,
+                color: Colors.white.withOpacity(0.6),
+              ),
+              const SizedBox(width: 6),
+              Text(
+                'Native: ${_nativeResolution!.mode} (${_nativeResolution!.aspectRatio})',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.white.withOpacity(0.7),
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+            ],
           ),
+        ],
+        const SizedBox(height: 8),
+        GlassmorphicContainer(
+          width: double.infinity,
+          height: 56,
+          borderRadius: 16,
+          linearGradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              const Color.fromARGB(30, 150, 200, 255).withOpacity(0.1),
+              const Color.fromARGB(20, 120, 170, 240).withOpacity(0.06),
+            ],
+          ),
+          border: 1.2,
+          blur: 26,
+          borderGradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [],
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           child: DropdownButton<DisplayResolution>(
             value: _currentResolution,
             isExpanded: true,
             underline: const SizedBox(),
-            dropdownColor: const Color.fromARGB(255, 45, 45, 45),
+            dropdownColor: const Color.fromARGB(255, 18, 22, 32),
             style: const TextStyle(color: Colors.white),
             hint: const Text(
               'Select Resolution',
@@ -653,13 +1429,26 @@ class _DisplaySettingsPageState extends State<DisplaySettingsPage> {
           ),
         ),
         const SizedBox(height: 8),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.05),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.white.withOpacity(0.1)),
+        GlassmorphicContainer(
+          width: double.infinity,
+          height: 56,
+          borderRadius: 16,
+          linearGradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              const Color.fromARGB(30, 150, 200, 255).withOpacity(0.1),
+              const Color.fromARGB(20, 120, 170, 240).withOpacity(0.06),
+            ],
           ),
+          border: 1.2,
+          blur: 26,
+          borderGradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [],
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -669,6 +1458,90 @@ class _DisplaySettingsPageState extends State<DisplaySettingsPage> {
                   color: Colors.white70,
                   fontSize: 14,
                 ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildBrightnessSlider() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              'Brightness',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: Colors.white,
+              ),
+            ),
+            Text(
+              '${_brightness.round()}%',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: Colors.white.withOpacity(0.8),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        GlassmorphicContainer(
+          width: double.infinity,
+          height: 60,
+          borderRadius: 16,
+          linearGradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              const Color.fromARGB(30, 150, 200, 255).withOpacity(0.1),
+              const Color.fromARGB(20, 120, 170, 240).withOpacity(0.06),
+            ],
+          ),
+          border: 1.2,
+          blur: 26,
+          borderGradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [],
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Row(
+            children: [
+              Icon(
+                Icons.brightness_6,
+                color: Colors.white.withOpacity(0.7),
+                size: 20,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Slider(
+                  value: _brightness,
+                  min: 0.0,
+                  max: 100.0,
+                  divisions: 100,
+                  activeColor: const Color.fromARGB(255, 100, 200, 255),
+                  inactiveColor: Colors.white.withOpacity(0.2),
+                  thumbColor: const Color.fromARGB(255, 100, 200, 255),
+                  onChanged: (value) {
+                    setState(() {
+                      _brightness = value;
+                    });
+                    _setBrightness(value);
+                  },
+                ),
+              ),
+              const SizedBox(width: 8),
+              Icon(
+                Icons.brightness_high,
+                color: Colors.white.withOpacity(0.7),
+                size: 20,
               ),
             ],
           ),
@@ -789,14 +1662,27 @@ class _DisplaySettingsPageState extends State<DisplaySettingsPage> {
   Widget _buildNightLightSetting() {
     return InkWell(
       onTap: () => _setNightLight(!_nightLight),
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.05),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.white.withOpacity(0.1)),
+      borderRadius: BorderRadius.circular(16),
+      child: GlassmorphicContainer(
+        width: double.infinity,
+        height: 56,
+        borderRadius: 16,
+        linearGradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Colors.white.withOpacity(0.08),
+            Colors.white.withOpacity(0.03),
+          ],
         ),
+        border: 1.2,
+        blur: 26,
+        borderGradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [],
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [

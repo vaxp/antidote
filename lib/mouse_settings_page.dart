@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:dbus/dbus.dart';
+import 'package:antidote/glassmorphic_container.dart';
 
 class MouseSettingsPage extends StatefulWidget {
   const MouseSettingsPage({super.key});
@@ -326,30 +327,30 @@ class _MouseSettingsPageState extends State<MouseSettingsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color.fromARGB(0, 0, 0, 0),
+      backgroundColor: Colors.transparent,
       body: Center(
-        child: Container(
-          width: 500,
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [
-                Color.fromARGB(220, 28, 32, 44),
-                Color.fromARGB(180, 18, 20, 30),
-              ],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.circular(36),
-            border: Border.all(color: Colors.white.withOpacity(0.06)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.45),
-                blurRadius: 30,
-                offset: const Offset(0, 8),
-              ),
+        child: GlassmorphicContainer(
+          width: 600,
+          height: MediaQuery.of(context).size.height * 0.85,
+          borderRadius: 24,
+          linearGradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              const Color.fromARGB(40, 120, 180, 240).withOpacity(0.12),
+              const Color.fromARGB(30, 100, 150, 220).withOpacity(0.08),
+              const Color.fromARGB(25, 80, 130, 200).withOpacity(0.06),
             ],
+            stops: const [0.0, 0.5, 1.0],
           ),
+          border: 1.2,
+          blur: 26,
+          borderGradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [],
+          ),
+          padding: const EdgeInsets.all(32),
           child: SingleChildScrollView(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -357,9 +358,10 @@ class _MouseSettingsPageState extends State<MouseSettingsPage> {
                 const Text(
                   'Mouse & Touchpad',
                   style: TextStyle(
-                    fontSize: 24,
+                    fontSize: 32,
                     fontWeight: FontWeight.bold,
                     color: Colors.white,
+                    letterSpacing: 0.5,
                   ),
                 ),
                 const SizedBox(height: 24),

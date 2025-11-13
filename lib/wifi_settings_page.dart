@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:antidote/wifi_manager_dialog.dart';
 import 'package:dbus/dbus.dart';
 import 'package:uuid/uuid.dart';
+import 'package:antidote/glassmorphic_container.dart';
 
 class WiFiSettingsPage extends StatelessWidget {
   const WiFiSettingsPage({super.key});
@@ -9,30 +10,30 @@ class WiFiSettingsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color.fromARGB(0, 0, 0, 0),
+      backgroundColor: Colors.transparent,
       body: Center(
-        child: Container(
-          width: 500,
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [
-                Color.fromARGB(220, 28, 32, 44),
-                Color.fromARGB(180, 18, 20, 30),
-              ],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.circular(36),
-            border: Border.all(color: Colors.white.withOpacity(0.06)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.45),
-                blurRadius: 30,
-                offset: const Offset(0, 8),
-              ),
+        child: GlassmorphicContainer(
+          width: 600,
+          height: MediaQuery.of(context).size.height * 0.85,
+          borderRadius: 24,
+          linearGradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              const Color.fromARGB(40, 120, 180, 240).withOpacity(0.12),
+              const Color.fromARGB(30, 100, 150, 220).withOpacity(0.08),
+              const Color.fromARGB(25, 80, 130, 200).withOpacity(0.06),
             ],
+            stops: const [0.0, 0.5, 1.0],
           ),
+          border: 1.2,
+          blur: 26,
+          borderGradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [],
+          ),
+          padding: const EdgeInsets.all(32),
           child: const WiFiManagerContent(),
         ),
       ),
@@ -55,6 +56,7 @@ class _WiFiManagerContentState extends State<WiFiManagerContent> {
   bool _isLoading = true;
   String? _connectingTo;
   String? _error;
+  bool _wifiEnabled = true;
 
   @override
   void initState() {
@@ -71,6 +73,7 @@ class _WiFiManagerContentState extends State<WiFiManagerContent> {
 
   Future<void> _initNetworks() async {
     try {
+      await _checkWifiStatus();
       await _fetchNetworks();
       // Only start scanning if Wi-Fi is enabled and available
       if (await _isWifiAvailable()) {
@@ -81,6 +84,73 @@ class _WiFiManagerContentState extends State<WiFiManagerContent> {
         setState(() {
           _error = 'Failed to initialize: $e';
           _isLoading = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _checkWifiStatus() async {
+    try {
+      final nm = DBusRemoteObject(
+        _bus,
+        name: 'org.freedesktop.NetworkManager',
+        path: DBusObjectPath('/org/freedesktop/NetworkManager'),
+      );
+
+      final wifiEnabled = await nm.getProperty(
+        'org.freedesktop.NetworkManager',
+        'WirelessEnabled',
+      );
+
+      if (mounted) {
+        setState(() {
+          _wifiEnabled = (wifiEnabled as DBusBoolean).value;
+        });
+      }
+    } catch (e) {
+      debugPrint('Check WiFi status error: $e');
+    }
+  }
+
+  Future<void> _toggleWifi(bool enabled) async {
+    try {
+      final nm = DBusRemoteObject(
+        _bus,
+        name: 'org.freedesktop.NetworkManager',
+        path: DBusObjectPath('/org/freedesktop/NetworkManager'),
+      );
+
+      await nm.setProperty(
+        'org.freedesktop.NetworkManager',
+        'WirelessEnabled',
+        DBusBoolean(enabled),
+      );
+
+      if (mounted) {
+        setState(() {
+          _wifiEnabled = enabled;
+        });
+      }
+
+      // Refresh networks after toggling
+      if (enabled) {
+        await Future.delayed(const Duration(milliseconds: 500));
+        await _fetchNetworks();
+        if (await _isWifiAvailable()) {
+          await _startScanning();
+        }
+      } else {
+        if (mounted) {
+          setState(() {
+            _networks = [];
+            _isLoading = false;
+          });
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = 'Failed to toggle Wi-Fi: $e';
         });
       }
     }
@@ -592,7 +662,7 @@ class _WiFiManagerContentState extends State<WiFiManagerContent> {
         bool obscureText = true;
 
         return AlertDialog(
-          backgroundColor: const Color.fromARGB(255, 45, 45, 45),
+          backgroundColor: const Color.fromARGB(255, 18, 22, 32),
           surfaceTintColor: Colors.transparent,
           title: const Text(
             'Enter Password',
@@ -649,6 +719,39 @@ class _WiFiManagerContentState extends State<WiFiManagerContent> {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // Wi-Fi Toggle Section
+        Row(
+          children: [
+            const Text(
+              'Wi-Fi',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
+            const Spacer(),
+            Row(
+              children: [
+                Text(
+                  _wifiEnabled ? 'On' : 'Off',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.white.withOpacity(0.7),
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Switch(
+                  value: _wifiEnabled,
+                  onChanged: (value) => _toggleWifi(value),
+                  activeColor: const Color.fromARGB(255, 100, 200, 255),
+                ),
+              ],
+            ),
+          ],
+        ),
+        const SizedBox(height: 24),
         Row(
           children: [
             const Text(
@@ -666,14 +769,14 @@ class _WiFiManagerContentState extends State<WiFiManagerContent> {
                 height: 20,
                 child: CircularProgressIndicator(
                   strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation(Colors.tealAccent),
+                  valueColor: AlwaysStoppedAnimation(Color.fromARGB(255, 100, 200, 255)),
                 ),
               )
             else
               IconButton(
-                onPressed: _startScanning,
+                onPressed: _wifiEnabled ? _startScanning : null,
                 icon: const Icon(Icons.refresh_rounded),
-                color: Colors.white54,
+                color: _wifiEnabled ? Colors.white54 : Colors.white.withOpacity(0.3),
               ),
           ],
         ),
@@ -714,6 +817,38 @@ class _WiFiManagerContentState extends State<WiFiManagerContent> {
               ),
             ),
           )
+        else if (!_wifiEnabled)
+          Expanded(
+            child: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.wifi_off_rounded,
+                    size: 48,
+                    color: Colors.white.withOpacity(0.2),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Wi-Fi is turned off',
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.5),
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Turn on Wi-Fi to see available networks',
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.4),
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          )
         else if (_networks.isEmpty)
           Expanded(
             child: Center(
@@ -748,7 +883,7 @@ class _WiFiManagerContentState extends State<WiFiManagerContent> {
                 final isConnecting = _connectingTo == network.ssid;
 
                 return ListTile(
-                  onTap: isConnecting
+                  onTap: (isConnecting || !_wifiEnabled)
                       ? null
                       : () => _connectToNetwork(network),
                   contentPadding: EdgeInsets.zero,

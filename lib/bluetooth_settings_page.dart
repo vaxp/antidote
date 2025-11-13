@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:dbus/dbus.dart';
 import 'package:flutter/material.dart';
 
@@ -54,6 +55,7 @@ class _BluetoothManagerContentState extends State<BluetoothManagerContent> {
   List<Map<String, dynamic>> _devices = [];
   Timer? _scanTimer;
   final List<StreamSubscription> _bluezSubscriptions = [];
+  bool _bluetoothEnabled = false;
 
   @override
   void initState() {
@@ -78,9 +80,13 @@ class _BluetoothManagerContentState extends State<BluetoothManagerContent> {
     try {
       await _findAdapter();
       if (_adapterPath != null) {
+        await _checkBluetoothStatus();
         await _ensureAdapterPowered();
         _listenBluezSignals();
-        await _startScan();
+        // Only start scanning if Bluetooth is enabled
+        if (_bluetoothEnabled) {
+          await _startScan();
+        }
       }
     } catch (e) {
       debugPrint("Bluetooth Init Error: $e");
@@ -116,6 +122,27 @@ class _BluetoothManagerContentState extends State<BluetoothManagerContent> {
     }
   }
 
+  Future<void> _checkBluetoothStatus() async {
+    try {
+      // Use hardcoded path like olid.dart - more reliable
+      final adapter = DBusRemoteObject(
+        _sysbus,
+        name: 'org.bluez',
+        path: DBusObjectPath('/org/bluez/hci0'),
+      );
+      final powered =
+          (await adapter.getProperty('org.bluez.Adapter1', 'Powered'))
+              as DBusBoolean;
+      if (mounted) {
+        setState(() => _bluetoothEnabled = powered.value);
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() => _bluetoothEnabled = false);
+      }
+    }
+  }
+
   Future<void> _ensureAdapterPowered() async {
     if (_adapterPath == null) return;
     try {
@@ -136,16 +163,52 @@ class _BluetoothManagerContentState extends State<BluetoothManagerContent> {
         isPowered = poweredVal.value;
       }
 
+      if (mounted) {
+        setState(() => _bluetoothEnabled = isPowered);
+      }
+
+      // Only try to power on if it's off - but don't fail if it errors
       if (!isPowered) {
-        await adapter.setProperty(
-          'org.bluez.Adapter1',
-          'Powered',
-          DBusBoolean(true),
-        );
-        await Future.delayed(const Duration(seconds: 1));
+        try {
+          await adapter.setProperty(
+            'org.bluez.Adapter1',
+            'Powered',
+            DBusBoolean(true),
+          );
+          await Future.delayed(const Duration(seconds: 1));
+          if (mounted) {
+            setState(() => _bluetoothEnabled = true);
+          }
+        } catch (e) {
+          // Silently fail - user can toggle manually
+          debugPrint("Power On Error (non-critical): $e");
+        }
       }
     } catch (e) {
       debugPrint("Power On Error: $e");
+    }
+  }
+
+  Future<void> _toggleBluetooth(bool enabled) async {
+    try {
+      // Use rfkill command like olid.dart - more reliable than DBus directly
+      await Process.run('rfkill', [enabled ? 'unblock' : 'block', 'bluetooth']);
+      await _checkBluetoothStatus();
+      
+      // Refresh devices after toggling
+      if (_bluetoothEnabled) {
+        await Future.delayed(const Duration(milliseconds: 500));
+        await _fetchDevices();
+        await _startScan();
+      } else {
+        await _stopScan();
+        if (mounted) {
+          setState(() => _devices = []);
+        }
+      }
+    } catch (_) {
+      // Silently fail and re-check status
+      await _checkBluetoothStatus();
     }
   }
 
@@ -341,6 +404,41 @@ class _BluetoothManagerContentState extends State<BluetoothManagerContent> {
   Widget build(BuildContext context) {
     return Column(
       children: [
+        // Bluetooth Toggle Section
+        Row(
+          children: [
+            const Text(
+              'Bluetooth',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
+            const Spacer(),
+            Row(
+              children: [
+                Text(
+                  _bluetoothEnabled ? 'On' : 'Off',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.white.withOpacity(0.7),
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Switch(
+                  value: _bluetoothEnabled,
+                  onChanged: (_adapterPath == null || _isInitializing)
+                      ? null
+                      : (value) => _toggleBluetooth(value),
+                  activeColor: Colors.blueAccent,
+                ),
+              ],
+            ),
+          ],
+        ),
+        const SizedBox(height: 24),
         Row(
           children: [
             const Icon(
@@ -364,7 +462,7 @@ class _BluetoothManagerContentState extends State<BluetoothManagerContent> {
                 child: Icon(Icons.error_outline, color: Colors.redAccent),
               ),
             IconButton(
-              onPressed: (_isInitializing || _adapterPath == null)
+              onPressed: (_isInitializing || _adapterPath == null || !_bluetoothEnabled)
                   ? null
                   : (_isScanning ? _stopScan : _startScan),
               icon: _isScanning
@@ -376,9 +474,9 @@ class _BluetoothManagerContentState extends State<BluetoothManagerContent> {
                         color: Colors.blueAccent,
                       ),
                     )
-                  : const Icon(
+                  : Icon(
                       Icons.refresh_rounded,
-                      color: Colors.white70,
+                      color: _bluetoothEnabled ? Colors.white70 : Colors.white.withOpacity(0.3),
                     ),
               tooltip: _isScanning ? "Stop Scanning" : "Start Scanning",
             ),
@@ -390,6 +488,36 @@ class _BluetoothManagerContentState extends State<BluetoothManagerContent> {
               ? const Center(
                   child: CircularProgressIndicator(
                     color: Colors.blueAccent,
+                  ),
+                )
+              : !_bluetoothEnabled
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.bluetooth_disabled_rounded,
+                        size: 48,
+                        color: Colors.white.withOpacity(0.2),
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Bluetooth is turned off',
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.5),
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Turn on Bluetooth to see available devices',
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.4),
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
                   ),
                 )
               : _devices.isEmpty

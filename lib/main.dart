@@ -7,6 +7,7 @@ import 'package:antidote/audio_settings_page.dart';
 import 'package:antidote/mouse_settings_page.dart';
 import 'package:antidote/keyboard_settings_page.dart';
 import 'package:antidote/system_settings_page.dart';
+import 'package:antidote/glassmorphic_container.dart';
 
 void main() {
   runApp(const VenomLabApp());
@@ -83,104 +84,144 @@ class _SettingsHomePageState extends State<SettingsHomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color.fromARGB(220, 28, 32, 44),
-      body: Row(
-        children: [
-          // Sidebar Navigation
-          Container(
-            width: 200,
-            padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [
-                Color.fromARGB(220, 28, 32, 44),
-                Color.fromARGB(180, 18, 20, 30),
-              ],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-              borderRadius: const BorderRadius.only(
-                topRight: Radius.circular(24),
-                bottomRight: Radius.circular(24),
-              ),
-              border: Border(
-                right: BorderSide(color: Colors.white.withOpacity(0.06)),
-              ),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              const Color.fromARGB(255, 8, 10, 18),
+              const Color.fromARGB(255, 12, 15, 25),
+              const Color.fromARGB(255, 10, 13, 22),
+              const Color.fromARGB(255, 14, 17, 28),
+            ],
+            stops: const [0.0, 0.3, 0.7, 1.0],
           ),
-          child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                const Padding(
-                  padding: EdgeInsets.all(16),
-                  child: Text(
-                    'Settings',
-                        style: TextStyle(
-                      fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
+        ),
+        child: Row(
+          children: [
+            // Sidebar Navigation
+            GlassmorphicContainer(
+              width: 240,
+              height: double.infinity,
+              borderRadius: 0,
+              linearGradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  const Color.fromARGB(35, 100, 150, 200).withOpacity(0.15),
+                  const Color.fromARGB(25, 80, 120, 180).withOpacity(0.1),
+                  const Color.fromARGB(20, 60, 100, 160).withOpacity(0.08),
+                ],
+                stops: const [0.0, 0.5, 1.0],
+              ),
+              border: 0,
+              blur: 26,
+              borderGradient: const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [],
+              ),
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Padding(
+                    padding: EdgeInsets.only(left: 8, top: 8, bottom: 8),
+                    child: Text(
+                      'Settings',
+                      style: TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                        letterSpacing: 0.5,
                       ),
-                ),
-                const SizedBox(height: 16),
-                Expanded(
-                  child: ListView.builder(
-                    itemCount: _navItems.length,
-                    itemBuilder: (context, index) {
-                      final item = _navItems[index];
-                      final isSelected = _selectedIndex == index;
-                      return _buildNavItem(item, index, isSelected);
-                    },
-                  ),
-                        ),
-                      ],
                     ),
                   ),
-              // Content Area
-              Expanded(
-            child: _pages[_selectedIndex],
-          ),
-        ],
+                  const SizedBox(height: 24),
+                  Expanded(
+                    child: ListView.builder(
+                      itemCount: _navItems.length,
+                      itemBuilder: (context, index) {
+                        final item = _navItems[index];
+                        final isSelected = _selectedIndex == index;
+                        return _buildNavItem(item, index, isSelected);
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // Content Area
+            Expanded(
+              child: _pages[_selectedIndex],
+            ),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildNavItem(NavigationItem item, int index, bool isSelected) {
-    return InkWell(
-      onTap: () => setState(() => _selectedIndex = index),
-      borderRadius: BorderRadius.circular(12),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        margin: const EdgeInsets.only(bottom: 8),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? Colors.tealAccent.withOpacity(0.15)
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(12),
-          border: isSelected
-              ? Border.all(
-                  color: Colors.tealAccent.withOpacity(0.3),
-                  width: 1,
-                )
-              : null,
-        ),
-        child: Row(
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => setState(() => _selectedIndex = index),
+          borderRadius: BorderRadius.circular(16),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeInOut,
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+            decoration: BoxDecoration(
+              gradient: isSelected
+                  ? LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        const Color.fromARGB(255, 64, 200, 255).withOpacity(0.25),
+                        const Color.fromARGB(255, 100, 150, 255).withOpacity(0.15),
+                        const Color.fromARGB(255, 80, 120, 220).withOpacity(0.1),
+                      ],
+                      stops: const [0.0, 0.5, 1.0],
+                    )
+                  : null,
+              borderRadius: BorderRadius.circular(16),
+              border: isSelected
+                  ? Border.all(
+                      color: const Color.fromARGB(255, 64, 200, 255).withOpacity(0.5),
+                      width: 1.2,
+                    )
+                  : Border.all(
+                      color: Colors.white.withOpacity(0.08),
+                      width: 1,
+                    ),
+            ),
+            child: Row(
               children: [
                 Icon(
-              item.icon,
-              color: isSelected ? Colors.tealAccent : Colors.white70,
-              size: 20,
-              ),
-              const SizedBox(width: 12),
-            Text(
-              item.label,
-              style: TextStyle(
-                color: isSelected ? Colors.white : Colors.white70,
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                fontSize: 14,
-              ),
+                  item.icon,
+                  color: isSelected 
+                      ? const Color.fromARGB(255, 100, 200, 255)
+                      : Colors.white.withOpacity(0.65),
+                  size: 22,
+                ),
+                const SizedBox(width: 14),
+                Text(
+                  item.label,
+                  style: TextStyle(
+                    color: isSelected 
+                        ? Colors.white 
+                        : Colors.white.withOpacity(0.75),
+                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                    fontSize: 15,
+                    letterSpacing: 0.3,
+                  ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
