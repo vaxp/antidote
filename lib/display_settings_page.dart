@@ -49,7 +49,8 @@ class _DisplaySettingsPageState extends State<DisplaySettingsPage> {
   DisplayResolution? _currentResolution;
   DisplayResolution? _nativeResolution; // True/native screen resolution
   List<DisplayResolution> _availableResolutions = [];
-  String _refreshRate = '59.88 Hz';
+  String _refreshRate = '60.00 Hz';
+  List<String> _availableRefreshRates = []; // Available refresh rates for current resolution
   int _scale = 100; // 100 or 200
   bool _fractionalScaling = false;
   bool _nightLight = false;
@@ -473,7 +474,7 @@ class _DisplaySettingsPageState extends State<DisplaySettingsPage> {
             if (modeMatch != null) {
               final width = int.tryParse(modeMatch.group(1) ?? '') ?? 1680;
               final height = int.tryParse(modeMatch.group(2) ?? '') ?? 1050;
-              final refresh = modeMatch.group(3) ?? '59.88';
+              final refresh = modeMatch.group(3) ?? '60.00';
 
               // Calculate aspect ratio
               final gcd = _gcd(width, height);
@@ -529,8 +530,9 @@ class _DisplaySettingsPageState extends State<DisplaySettingsPage> {
         }
       }
       
-      // Get available resolutions
+      // Get available resolutions and refresh rates
       await _getX11AvailableResolutions();
+      await _getX11AvailableRefreshRates();
     } catch (e) {
       debugPrint('Get X11 display info error: $e');
     }
@@ -659,6 +661,7 @@ class _DisplaySettingsPageState extends State<DisplaySettingsPage> {
       int? nativeWidth, nativeHeight;
       int? currentWidth, currentHeight;
       String? refreshRate;
+      final Set<double> refreshRates = {};
 
       for (final line in lines) {
         // Find output name
@@ -684,10 +687,16 @@ class _DisplaySettingsPageState extends State<DisplaySettingsPage> {
             }
           }
 
-          // Parse refresh rate
+          // Parse refresh rate (current)
           final refreshMatch = RegExp(r'(\d+\.?\d*)\s*Hz').firstMatch(line);
           if (refreshMatch != null) {
-            refreshRate = refreshMatch.group(1);
+            final rate = double.tryParse(refreshMatch.group(1) ?? '');
+            if (rate != null) {
+              refreshRate = refreshMatch.group(1);
+              if (rate >= 30.0 && rate <= 360.0) {
+                refreshRates.add(rate);
+              }
+            }
           }
         }
       }
@@ -699,6 +708,9 @@ class _DisplaySettingsPageState extends State<DisplaySettingsPage> {
         final aspectW = nw ~/ gcd;
         final aspectH = nh ~/ gcd;
         final aspectRatio = '$aspectW : $aspectH';
+
+        // Get all available refresh rates from wlr-randr modes
+        await _getWaylandAvailableRefreshRates();
 
         if (mounted) {
           setState(() {
@@ -845,6 +857,128 @@ class _DisplaySettingsPageState extends State<DisplaySettingsPage> {
     }
   }
 
+  Future<void> _getX11AvailableRefreshRates() async {
+    try {
+      if (_currentResolution == null) return;
+      
+      final result = await Process.run('xrandr', []);
+      if (result.exitCode == 0) {
+        final output = result.stdout.toString();
+        final lines = output.split('\n');
+        final Set<double> refreshRates = {};
+        final String targetMode = '${_currentResolution!.width}x${_currentResolution!.height}';
+        bool foundTargetMode = false;
+
+        for (final line in lines) {
+          // Look for the line containing our target resolution
+          if (line.contains(targetMode)) {
+            foundTargetMode = true;
+            // Extract all refresh rates from this line
+            // Format: "   1920x1080     60.00*+  59.94    50.00    30.00    25.00    24.00"
+            // First try with Hz suffix
+            final refreshMatches = RegExp(r'(\d+\.?\d*)\s*Hz').allMatches(line);
+            for (final match in refreshMatches) {
+              final rate = double.tryParse(match.group(1) ?? '');
+              if (rate != null && rate >= 30.0 && rate <= 360.0) {
+                refreshRates.add(rate);
+              }
+            }
+            
+            // Also extract all numbers that could be refresh rates (after the resolution)
+            // Pattern: resolution followed by whitespace, then numbers (refresh rates)
+            final parts = line.split(RegExp(r'\s+'));
+            for (int i = 0; i < parts.length; i++) {
+              final part = parts[i];
+              // Skip the resolution part (e.g., "1920x1080")
+              if (part.contains('x')) continue;
+              
+              // Try to parse as refresh rate
+              // Remove markers like *, +, current, preferred
+              final cleanPart = part.replaceAll(RegExp(r'[*+\-]'), '');
+              final rate = double.tryParse(cleanPart);
+              if (rate != null && rate >= 30.0 && rate <= 360.0) {
+                refreshRates.add(rate);
+              }
+            }
+          } else if (foundTargetMode && line.trim().isNotEmpty && !line.startsWith(' ')) {
+            // We've moved to a different mode, stop parsing
+            break;
+          }
+        }
+
+        // If no refresh rates found, try parsing from xrandr --verbose
+        if (refreshRates.isEmpty) {
+          final verboseResult = await Process.run('xrandr', ['--verbose']);
+          if (verboseResult.exitCode == 0) {
+            final verboseOutput = verboseResult.stdout.toString();
+            final verboseLines = verboseOutput.split('\n');
+            bool inTargetMode = false;
+            
+            for (final line in verboseLines) {
+              if (line.contains(targetMode) && line.contains('connected')) {
+                inTargetMode = true;
+                continue;
+              }
+              
+              if (inTargetMode) {
+                // Look for refresh rate in modeline or mode details
+                final refreshMatch = RegExp(r'(\d+\.?\d*)\s*Hz').firstMatch(line);
+                if (refreshMatch != null) {
+                  final rate = double.tryParse(refreshMatch.group(1) ?? '');
+                  if (rate != null && rate >= 30.0 && rate <= 360.0) {
+                    refreshRates.add(rate);
+                  }
+                }
+                
+                // Stop if we hit another mode or output
+                if (line.trim().isNotEmpty && !line.startsWith(' ') && !line.startsWith('\t')) {
+                  break;
+                }
+              }
+            }
+          }
+        }
+
+        // If still no refresh rates found, generate common ones
+        if (refreshRates.isEmpty) {
+          // Generate common refresh rates from 30Hz to 240Hz
+          for (double rate = 30.0; rate <= 240.0; rate += 1.0) {
+            if (rate == 30.0 || rate == 50.0 || rate == 59.94 || rate == 60.0 || 
+                rate == 75.0 || rate == 100.0 || rate == 120.0 || rate == 144.0 || 
+                rate == 165.0 || rate == 240.0) {
+              refreshRates.add(rate);
+            }
+          }
+        }
+
+        // Sort refresh rates (highest first)
+        final sortedRates = refreshRates.toList()..sort((a, b) => b.compareTo(a));
+        
+        // Format as strings with 2 decimal places
+        final formattedRates = sortedRates.map((rate) {
+          // Format to remove unnecessary decimals (e.g., 60.00 -> 60, 59.94 -> 59.94)
+          if (rate == rate.roundToDouble()) {
+            return '${rate.round()} Hz';
+          } else {
+            return '${rate.toStringAsFixed(2)} Hz';
+          }
+        }).toList();
+
+        if (mounted) {
+          setState(() {
+            _availableRefreshRates = formattedRates;
+            // Update current refresh rate if it's not in the list
+            if (!formattedRates.contains(_refreshRate) && formattedRates.isNotEmpty) {
+              _refreshRate = formattedRates.first;
+            }
+          });
+        }
+      }
+    } catch (e) {
+      debugPrint('Get X11 refresh rates error: $e');
+    }
+  }
+
   Future<void> _getWaylandAvailableResolutions() async {
     try {
       // Try wlr-randr for wlroots-based compositors
@@ -852,6 +986,7 @@ class _DisplaySettingsPageState extends State<DisplaySettingsPage> {
         final result = await Process.run('wlr-randr', []);
         if (result.exitCode == 0) {
           await _parseWlrRandrModes(result.stdout.toString());
+          await _getWaylandAvailableRefreshRates();
           return;
         }
       } catch (_) {}
@@ -860,9 +995,72 @@ class _DisplaySettingsPageState extends State<DisplaySettingsPage> {
       // We can't easily get all available modes, so we'll show common ones
       if (_nativeResolution != null) {
         _generateCommonResolutions(_nativeResolution!);
+        await _getWaylandAvailableRefreshRates();
       }
     } catch (e) {
       debugPrint('Get Wayland resolutions error: $e');
+    }
+  }
+
+  Future<void> _getWaylandAvailableRefreshRates() async {
+    try {
+      final Set<double> refreshRates = {};
+      
+      // Try wlr-randr for wlroots-based compositors
+      try {
+        final result = await Process.run('wlr-randr', []);
+        if (result.exitCode == 0) {
+          final output = result.stdout.toString();
+          final lines = output.split('\n');
+          
+          for (final line in lines) {
+            // Parse mode lines like "  1920x1080 px, 60.000000 Hz (preferred)"
+            final refreshMatch = RegExp(r'(\d+\.?\d*)\s*Hz').firstMatch(line);
+            if (refreshMatch != null) {
+              final rate = double.tryParse(refreshMatch.group(1) ?? '');
+              if (rate != null && rate >= 30.0 && rate <= 360.0) {
+                refreshRates.add(rate);
+              }
+            }
+          }
+        }
+      } catch (_) {}
+
+      // If no refresh rates found, generate common ones
+      if (refreshRates.isEmpty) {
+        // Generate common refresh rates from 30Hz to 240Hz
+        for (double rate = 30.0; rate <= 240.0; rate += 1.0) {
+          if (rate == 30.0 || rate == 50.0 || rate == 59.94 || rate == 60.0 || 
+              rate == 75.0 || rate == 100.0 || rate == 120.0 || rate == 144.0 || 
+              rate == 165.0 || rate == 240.0) {
+            refreshRates.add(rate);
+          }
+        }
+      }
+
+      // Sort refresh rates (highest first)
+      final sortedRates = refreshRates.toList()..sort((a, b) => b.compareTo(a));
+      
+      // Format as strings
+      final formattedRates = sortedRates.map((rate) {
+        if (rate == rate.roundToDouble()) {
+          return '${rate.round()} Hz';
+        } else {
+          return '${rate.toStringAsFixed(2)} Hz';
+        }
+      }).toList();
+
+      if (mounted) {
+        setState(() {
+          _availableRefreshRates = formattedRates;
+          // Update current refresh rate if it's not in the list
+          if (!formattedRates.contains(_refreshRate) && formattedRates.isNotEmpty) {
+            _refreshRate = formattedRates.first;
+          }
+        });
+      }
+    } catch (e) {
+      debugPrint('Get Wayland refresh rates error: $e');
     }
   }
 
@@ -1075,6 +1273,9 @@ class _DisplaySettingsPageState extends State<DisplaySettingsPage> {
           if (mounted) {
         setState(() => _currentResolution = resolution);
           }
+          
+          // Refresh available refresh rates for the new resolution
+          await _getX11AvailableRefreshRates();
         }
       } else if (_displayServer == 'Wayland') {
         // For Wayland, try wlr-randr or other methods
@@ -1088,6 +1289,9 @@ class _DisplaySettingsPageState extends State<DisplaySettingsPage> {
           if (mounted) {
             setState(() => _currentResolution = resolution);
           }
+          
+          // Refresh available refresh rates for the new resolution
+          await _getWaylandAvailableRefreshRates();
         } catch (_) {
           // Wayland resolution changes are typically managed by compositor
           debugPrint('Wayland resolution change not supported via command line');
@@ -1095,6 +1299,61 @@ class _DisplaySettingsPageState extends State<DisplaySettingsPage> {
       }
     } catch (e) {
       debugPrint('Set resolution error: $e');
+    }
+  }
+
+  Future<void> _setRefreshRate(String refreshRate) async {
+    // Only set if refresh rate actually changed
+    if (_refreshRate == refreshRate) {
+      return;
+    }
+    
+    try {
+      if (_displayServer == 'X11') {
+        final displayName = await _getDisplayName();
+        if (displayName != null && _currentResolution != null) {
+          // Extract numeric value from refresh rate string (e.g., "60.00 Hz" -> 60.00)
+          final rateMatch = RegExp(r'(\d+\.?\d*)').firstMatch(refreshRate);
+          if (rateMatch != null) {
+            final rate = rateMatch.group(1);
+            await Process.run('xrandr', [
+              '--output',
+              displayName,
+              '--mode',
+              _currentResolution!.mode,
+              '--rate',
+              rate ?? '60',
+            ]);
+
+            if (mounted) {
+              setState(() => _refreshRate = refreshRate);
+            }
+          }
+        }
+      } else if (_displayServer == 'Wayland') {
+        // For Wayland, try wlr-randr
+        try {
+          final rateMatch = RegExp(r'(\d+\.?\d*)').firstMatch(refreshRate);
+          if (rateMatch != null) {
+            final rate = rateMatch.group(1);
+            await Process.run('wlr-randr', [
+              '--output',
+              'eDP-1', // Common laptop display name, may need detection
+              '--mode',
+              _currentResolution?.mode ?? '1920x1080',
+              '--refresh',
+              rate ?? '60',
+            ]);
+            if (mounted) {
+              setState(() => _refreshRate = refreshRate);
+            }
+          }
+        } catch (_) {
+          debugPrint('Wayland refresh rate change not supported via command line');
+        }
+      }
+    } catch (e) {
+      debugPrint('Set refresh rate error: $e');
     }
   }
 
@@ -1211,8 +1470,11 @@ class _DisplaySettingsPageState extends State<DisplaySettingsPage> {
                   _buildBrightnessSlider(),
                   const SizedBox(height: 24),
                 ],
-                // Refresh Rate (read-only)
-                _buildReadOnlySetting('Refresh Rate', _refreshRate),
+                // Refresh Rate (dropdown)
+                if (_availableRefreshRates.isNotEmpty)
+                  _buildRefreshRateDropdown()
+                else
+                  _buildReadOnlySetting('Refresh Rate', _refreshRate),
                 const SizedBox(height: 24),
                 // Scale
                 _buildScaleButtons(),
@@ -1409,6 +1671,66 @@ class _DisplaySettingsPageState extends State<DisplaySettingsPage> {
             }).toList(),
             onChanged: (newValue) {
               if (newValue != null) _setResolution(newValue);
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildRefreshRateDropdown() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Refresh Rate',
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+            color: Colors.white,
+          ),
+        ),
+        const SizedBox(height: 8),
+        GlassmorphicContainer(
+          width: double.infinity,
+          height: 56,
+          borderRadius: 16,
+          linearGradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              const Color.fromARGB(30, 150, 200, 255).withOpacity(0.1),
+              const Color.fromARGB(20, 120, 170, 240).withOpacity(0.06),
+            ],
+          ),
+          border: 1.2,
+          blur: 26,
+          borderGradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [],
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: DropdownButton<String>(
+            value: _refreshRate,
+            isExpanded: true,
+            underline: const SizedBox(),
+            dropdownColor: const Color.fromARGB(255, 18, 22, 32),
+            style: const TextStyle(color: Colors.white),
+            items: _availableRefreshRates.map((rate) {
+              return DropdownMenuItem<String>(
+                value: rate,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(rate),
+                    const Icon(Icons.arrow_drop_down, color: Colors.white54),
+                  ],
+                ),
+              );
+            }).toList(),
+            onChanged: (newValue) {
+              if (newValue != null) _setRefreshRate(newValue);
             },
           ),
         ),
