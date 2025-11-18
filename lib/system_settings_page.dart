@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:dbus/dbus.dart';
-import 'package:antidote/glassmorphic_container.dart';
 
 class SystemSettingsPage extends StatefulWidget {
   const SystemSettingsPage({super.key});
@@ -29,88 +28,78 @@ class _SystemSettingsPageState extends State<SystemSettingsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.transparent,
-      body: Center(
-        child: GlassmorphicContainer(
-          width: 600,
-          height: MediaQuery.of(context).size.height * 0.85,
-          borderRadius: 24,
-          linearGradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              const Color.fromARGB(40, 120, 180, 240).withOpacity(0.12),
-              const Color.fromARGB(30, 100, 150, 220).withOpacity(0.08),
-              const Color.fromARGB(25, 80, 130, 200).withOpacity(0.06),
-            ],
-            stops: const [0.0, 0.5, 1.0],
-          ),
-          border: 1.2,
-          blur: 26,
-          borderGradient: const LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [],
-          ),
-          padding: const EdgeInsets.all(32),
-          child: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'System',
-                  style: TextStyle(
-                    fontSize: 32,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-                const SizedBox(height: 32),
-                _buildSystemItem(
-                  icon: Icons.language_rounded,
-                  title: 'Region & Language',
-                  subtitle: 'System language and localization',
-                  onTap: () => _showRegionLanguageDialog(),
-                ),
-                const SizedBox(height: 12),
-                _buildSystemItem(
-                  icon: Icons.access_time_rounded,
-                  title: 'Date & Time',
-                  subtitle: 'Time zone and clock settings',
-                  onTap: () => _showDateTimeDialog(),
-                ),
-                const SizedBox(height: 12),
-                _buildSystemItem(
-                  icon: Icons.people_rounded,
-                  title: 'Users',
-                  subtitle: 'Add and remove accounts, change password',
-                  onTap: () => _showUsersDialog(),
-                ),
-                const SizedBox(height: 12),
-                _buildSystemItem(
-                  icon: Icons.desktop_windows_rounded,
-                  title: 'Remote Desktop',
-                  subtitle: 'Allow this device to be used remotely',
-                  onTap: () => _showRemoteDesktopDialog(),
-                ),
-                const SizedBox(height: 12),
-                _buildSystemItem(
-                  icon: Icons.terminal_rounded,
-                  title: 'Secure Shell',
-                  subtitle: 'SSH network access',
-                  onTap: () => _showSecureShellDialog(),
-                ),
-                const SizedBox(height: 12),
-                _buildSystemItem(
-                  icon: Icons.info_outline_rounded,
-                  title: 'About',
-                  subtitle: 'Hardware details and software versions',
-                  onTap: () => _showAboutDialog(),
-                ),
-              ],
+      backgroundColor: const Color.fromARGB(255, 0, 0, 0),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'System',
+              style: TextStyle(
+                fontSize: 40,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+                letterSpacing: 0.5,
+              ),
             ),
-          ),
+            const SizedBox(height: 8),
+            Opacity(
+              opacity: 0.6,
+              child: const Text(
+                'System information and settings',
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.white,
+                  letterSpacing: 0.5,
+                  fontWeight: FontWeight.w300,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ),
+            const SizedBox(height: 32),
+            _buildSystemItem(
+              icon: Icons.language_rounded,
+              title: 'Region & Language',
+              subtitle: 'System language and localization',
+              onTap: () => _showRegionLanguageDialog(),
+            ),
+            const SizedBox(height: 12),
+            _buildSystemItem(
+              icon: Icons.access_time_rounded,
+              title: 'Date & Time',
+              subtitle: 'Time zone and clock settings',
+              onTap: () => _showDateTimeDialog(),
+            ),
+            const SizedBox(height: 12),
+            _buildSystemItem(
+              icon: Icons.people_rounded,
+              title: 'Users',
+              subtitle: 'Add and remove accounts, change password',
+              onTap: () => _showUsersDialog(),
+            ),
+            const SizedBox(height: 12),
+            _buildSystemItem(
+              icon: Icons.desktop_windows_rounded,
+              title: 'Remote Desktop',
+              subtitle: 'Allow this device to be used remotely',
+              onTap: () => _showRemoteDesktopDialog(),
+            ),
+            const SizedBox(height: 12),
+            _buildSystemItem(
+              icon: Icons.terminal_rounded,
+              title: 'Secure Shell',
+              subtitle: 'SSH network access',
+              onTap: () => _showSecureShellDialog(),
+            ),
+            const SizedBox(height: 12),
+            _buildSystemItem(
+              icon: Icons.info_outline_rounded,
+              title: 'About',
+              subtitle: 'Hardware details and software versions',
+              onTap: () => _showAboutDialog(),
+            ),
+          ],
         ),
       ),
     );

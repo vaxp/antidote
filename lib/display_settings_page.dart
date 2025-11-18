@@ -1416,487 +1416,619 @@ class _DisplaySettingsPageState extends State<DisplaySettingsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.transparent,
-      body: Center(
-        child: GlassmorphicContainer(
-          width: 600,
-          height: MediaQuery.of(context).size.height * 0.85,
-          borderRadius: 24,
-          linearGradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-              colors: [
-              const Color.fromARGB(40, 120, 180, 240).withOpacity(0.12),
-              const Color.fromARGB(30, 100, 150, 220).withOpacity(0.08),
-              const Color.fromARGB(25, 80, 130, 200).withOpacity(0.06),
-              ],
-            stops: const [0.0, 0.5, 1.0],
-          ),
-          border: 1.2,
-          blur: 26,
-          borderGradient: const LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            colors: [],
-          ),
-          padding: const EdgeInsets.all(32),
-          child: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Display',
-                  style: TextStyle(
-                    fontSize: 32,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-                const SizedBox(height: 32),
-                // Orientation
-                _buildDropdownSetting(
-                  'Orientation',
-                  _orientation,
-                  ['Landscape', 'Portrait'],
-                  (value) => _setOrientation(value),
-                ),
-                const SizedBox(height: 24),
-                // Resolution
-                _buildResolutionDropdown(),
-                const SizedBox(height: 24),
-                // Brightness
-                if (_brightnessSupported) ...[
-                  _buildBrightnessSlider(),
-                  const SizedBox(height: 24),
-                ],
-                // Refresh Rate (dropdown)
-                if (_availableRefreshRates.isNotEmpty)
-                  _buildRefreshRateDropdown()
-                else
-                  _buildReadOnlySetting('Refresh Rate', _refreshRate),
-                const SizedBox(height: 24),
-                // Scale
-                _buildScaleButtons(),
-                const SizedBox(height: 24),
-                // Fractional Scaling
-                _buildToggleSetting(
-                  'Fractional Scaling',
-                  _fractionalScaling,
-                  'May increase power usage, lower speed, or reduce display sharpness.',
-                  (value) => _setFractionalScaling(value),
-                ),
-                const SizedBox(height: 24),
-                // Night Light
-                _buildNightLightSetting(),
-              ],
+      backgroundColor: const Color.fromARGB(255, 0, 0, 0),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header
+            const Text(
+              'Display',
+              style: TextStyle(
+                fontSize: 40,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+                letterSpacing: 0.5,
+              ),
             ),
-          ),
+            const SizedBox(height: 8),
+            Text(
+              'Manage your display settings',
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.white.withOpacity(0.6),
+              ),
+            ),
+            const SizedBox(height: 48),
+            
+            // Grid of settings - 2 columns
+            LayoutBuilder(
+              builder: (context, constraints) {
+                bool isTwoColumn = constraints.maxWidth > 1200;
+                return Wrap(
+                  spacing: 24,
+                  runSpacing: 24,
+                  children: [
+                    // Resolution
+                    SizedBox(
+                      width: isTwoColumn ? (constraints.maxWidth - 24) / 2 : double.infinity,
+                      child: _buildResolutionCard(),
+                    ),
+                    // Refresh Rate
+                    SizedBox(
+                      width: isTwoColumn ? (constraints.maxWidth - 24) / 2 : double.infinity,
+                      child: _buildRefreshRateCard(),
+                    ),
+                    // Brightness
+                    if (_brightnessSupported)
+                      SizedBox(
+                        width: isTwoColumn ? (constraints.maxWidth - 24) / 2 : double.infinity,
+                        child: _buildBrightnessCard(),
+                      ),
+                    // Orientation
+                    SizedBox(
+                      width: isTwoColumn ? (constraints.maxWidth - 24) / 2 : double.infinity,
+                      child: _buildOrientationCard(),
+                    ),
+                    // Scale
+                    SizedBox(
+                      width: isTwoColumn ? (constraints.maxWidth - 24) / 2 : double.infinity,
+                      child: _buildScaleCard(),
+                    ),
+                    // Night Light
+                    SizedBox(
+                      width: isTwoColumn ? (constraints.maxWidth - 24) / 2 : double.infinity,
+                      child: _buildNightLightCard(),
+                    ),
+                  ],
+                );
+              },
+            ),
+            
+            const SizedBox(height: 24),
+            
+            // Additional options
+            _buildFractionalScalingSection(),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildDropdownSetting(
-    String label,
-    String value,
-    List<String> options,
-    ValueChanged<String> onChanged,
-  ) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-            color: Colors.white,
-          ),
-        ),
-        const SizedBox(height: 8),
-        GlassmorphicContainer(
-          width: double.infinity,
-          height: 56,
-          borderRadius: 16,
-          linearGradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              const Color.fromARGB(30, 150, 200, 255).withOpacity(0.1),
-              const Color.fromARGB(20, 120, 170, 240).withOpacity(0.06),
-            ],
-          ),
-          border: 1.2,
-          blur: 26,
-          borderGradient: const LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [],
-          ),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          child: DropdownButton<String>(
-            value: value,
-            isExpanded: true,
-            underline: const SizedBox(),
-            dropdownColor: const Color.fromARGB(255, 18, 22, 32),
-            style: const TextStyle(color: Colors.white),
-            items: options.map((option) {
-              return DropdownMenuItem<String>(
-                value: option,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(option),
-                    const Icon(Icons.arrow_drop_down, color: Colors.white54),
-                  ],
-                ),
-              );
-            }).toList(),
-            onChanged: (newValue) {
-              if (newValue != null) onChanged(newValue);
-            },
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildResolutionDropdown() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        const Text(
-          'Resolution',
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-            color: Colors.white,
-          ),
-        ),
-            if (_displayServer != 'Unknown')
-        Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-          decoration: BoxDecoration(
-                  color: _displayServer == 'Wayland'
-                      ? Colors.blue.withOpacity(0.2)
-                      : Colors.green.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                    color: _displayServer == 'Wayland'
-                        ? Colors.blue.withOpacity(0.5)
-                        : Colors.green.withOpacity(0.5),
-                    width: 1,
-                  ),
-                ),
-                child: Text(
-                  _displayServer,
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    color: _displayServer == 'Wayland'
-                        ? Colors.blueAccent
-                        : Colors.greenAccent,
-                  ),
-                ),
-              ),
-          ],
-        ),
-        if (_nativeResolution != null) ...[
-          const SizedBox(height: 6),
-          Row(
-            children: [
-              Icon(
-                Icons.desktop_windows,
-                size: 14,
-                color: Colors.white.withOpacity(0.6),
-              ),
-              const SizedBox(width: 6),
-              Text(
-                'Native: ${_nativeResolution!.mode} (${_nativeResolution!.aspectRatio})',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.white.withOpacity(0.7),
-                  fontStyle: FontStyle.italic,
-                ),
-              ),
-            ],
-          ),
+  Widget _buildResolutionCard() {
+    return GlassmorphicContainer(
+      width: double.infinity,
+      height: 150,
+      borderRadius: 20,
+      linearGradient: LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [
+          const Color.fromARGB(30, 150, 200, 255).withOpacity(0.12),
+          const Color.fromARGB(20, 120, 170, 240).withOpacity(0.08),
         ],
-        const SizedBox(height: 8),
-        GlassmorphicContainer(
-          width: double.infinity,
-          height: 56,
-          borderRadius: 16,
-          linearGradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              const Color.fromARGB(30, 150, 200, 255).withOpacity(0.1),
-              const Color.fromARGB(20, 120, 170, 240).withOpacity(0.06),
-            ],
-          ),
-          border: 1.2,
-          blur: 26,
-          borderGradient: const LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [],
-          ),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          child: DropdownButton<DisplayResolution>(
-            value: _currentResolution,
-            isExpanded: true,
-            underline: const SizedBox(),
-            dropdownColor: const Color.fromARGB(255, 18, 22, 32),
-            style: const TextStyle(color: Colors.white),
-            hint: const Text(
-              'Select Resolution',
-              style: TextStyle(color: Colors.white54),
-            ),
-            items: _availableResolutions.map((resolution) {
-              return DropdownMenuItem<DisplayResolution>(
-                value: resolution,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(resolution.toString()),
-                    const Icon(Icons.arrow_drop_down, color: Colors.white54),
-                  ],
-                ),
-              );
-            }).toList(),
-            onChanged: (newValue) {
-              if (newValue != null) _setResolution(newValue);
-            },
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildRefreshRateDropdown() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Refresh Rate',
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-            color: Colors.white,
-          ),
-        ),
-        const SizedBox(height: 8),
-        GlassmorphicContainer(
-          width: double.infinity,
-          height: 56,
-          borderRadius: 16,
-          linearGradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              const Color.fromARGB(30, 150, 200, 255).withOpacity(0.1),
-              const Color.fromARGB(20, 120, 170, 240).withOpacity(0.06),
-            ],
-          ),
-          border: 1.2,
-          blur: 26,
-          borderGradient: const LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [],
-          ),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          child: DropdownButton<String>(
-            value: _refreshRate,
-            isExpanded: true,
-            underline: const SizedBox(),
-            dropdownColor: const Color.fromARGB(255, 18, 22, 32),
-            style: const TextStyle(color: Colors.white),
-            items: _availableRefreshRates.map((rate) {
-              return DropdownMenuItem<String>(
-                value: rate,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(rate),
-                    const Icon(Icons.arrow_drop_down, color: Colors.white54),
-                  ],
-                ),
-              );
-            }).toList(),
-            onChanged: (newValue) {
-              if (newValue != null) _setRefreshRate(newValue);
-            },
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildReadOnlySetting(String label, String value) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-            color: Colors.white,
-          ),
-        ),
-        const SizedBox(height: 8),
-        GlassmorphicContainer(
-          width: double.infinity,
-          height: 56,
-          borderRadius: 16,
-          linearGradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              const Color.fromARGB(30, 150, 200, 255).withOpacity(0.1),
-              const Color.fromARGB(20, 120, 170, 240).withOpacity(0.06),
-            ],
-          ),
-          border: 1.2,
-          blur: 26,
-          borderGradient: const LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [],
-          ),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          child: Row(
+      ),
+      border: 1.2,
+      blur: 40,
+      borderGradient: const LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [],
+      ),
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                value,
-                style: const TextStyle(
-                  color: Colors.white70,
-                  fontSize: 14,
-                ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Resolution',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  if (_displayServer != 'Unknown')
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: _displayServer == 'Wayland'
+                            ? Colors.blue.withOpacity(0.2)
+                            : Colors.green.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(
+                          color: _displayServer == 'Wayland'
+                              ? Colors.blue.withOpacity(0.5)
+                              : Colors.green.withOpacity(0.5),
+                          width: 0.8,
+                        ),
+                      ),
+                      child: Text(
+                        _displayServer,
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                          color: _displayServer == 'Wayland'
+                              ? Colors.blueAccent
+                              : Colors.greenAccent,
+                        ),
+                      ),
+                    ),
+                ],
               ),
+              if (_nativeResolution != null)
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      'Native',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: Colors.white.withOpacity(0.5),
+                      ),
+                    ),
+                    Text(
+                      _nativeResolution!.mode,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ],
+                ),
             ],
           ),
-        ),
-      ],
+          const SizedBox(height: 16),
+          if (_currentResolution != null)
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.05),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                '${_currentResolution!.width}x${_currentResolution!.height} (${_currentResolution!.aspectRatio})',
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          const SizedBox(height: 12),
+          if (_availableResolutions.isNotEmpty)
+            Expanded(
+              child: DropdownButton<DisplayResolution>(
+                value: _currentResolution,
+                isExpanded: true,
+                underline: const SizedBox(),
+                dropdownColor: const Color.fromARGB(255, 12, 12, 12),
+                style: const TextStyle(color: Colors.white, fontSize: 13),
+                hint: const Text(
+                  'Select Resolution',
+                  style: TextStyle(color: Colors.white54),
+                ),
+                items: _availableResolutions.map((resolution) {
+                  return DropdownMenuItem<DisplayResolution>(
+                    value: resolution,
+                    child: Text(resolution.toString()),
+                  );
+                }).toList(),
+                onChanged: (newValue) {
+                  if (newValue != null) _setResolution(newValue);
+                },
+              ),
+            ),
+        ],
+      ),
     );
   }
 
-  Widget _buildBrightnessSlider() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            const Text(
-              'Brightness',
-              style: TextStyle(
+  Widget _buildRefreshRateCard() {
+    return GlassmorphicContainer(
+      width: double.infinity,
+      height: 150,
+      borderRadius: 20,
+      linearGradient: LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [
+          const Color.fromARGB(30, 150, 200, 255).withOpacity(0.12),
+          const Color.fromARGB(20, 120, 170, 240).withOpacity(0.08),
+        ],
+      ),
+      border: 1.2,
+      blur: 40,
+      borderGradient: const LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [],
+      ),
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Refresh Rate',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.05),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Text(
+              _refreshRate,
+              style: const TextStyle(
                 fontSize: 14,
-                fontWeight: FontWeight.w500,
+                fontWeight: FontWeight.w600,
                 color: Colors.white,
               ),
             ),
-            Text(
-              '${_brightness.round()}%',
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: Colors.white.withOpacity(0.8),
+          ),
+          const SizedBox(height: 12),
+          if (_availableRefreshRates.isNotEmpty)
+            Expanded(
+              child: DropdownButton<String>(
+                value: _refreshRate,
+                isExpanded: true,
+                underline: const SizedBox(),
+                dropdownColor: const Color.fromARGB(255, 12, 12, 12),
+                style: const TextStyle(color: Colors.white, fontSize: 13),
+                items: _availableRefreshRates.map((rate) {
+                  return DropdownMenuItem<String>(
+                    value: rate,
+                    child: Text(rate),
+                  );
+                }).toList(),
+                onChanged: (newValue) {
+                  if (newValue != null) _setRefreshRate(newValue);
+                },
               ),
             ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        GlassmorphicContainer(
-          width: double.infinity,
-          height: 60,
-          borderRadius: 16,
-          linearGradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              const Color.fromARGB(30, 150, 200, 255).withOpacity(0.1),
-              const Color.fromARGB(20, 120, 170, 240).withOpacity(0.06),
-            ],
-          ),
-          border: 1.2,
-          blur: 26,
-          borderGradient: const LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [],
-          ),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          child: Row(
-            children: [
-              Icon(
-                Icons.brightness_6,
-                color: Colors.white.withOpacity(0.7),
-                size: 20,
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Slider(
-                  value: _brightness,
-                  min: 0.0,
-                  max: 100.0,
-                  divisions: 100,
-                  activeColor: const Color.fromARGB(255, 100, 200, 255),
-                  inactiveColor: Colors.white.withOpacity(0.2),
-                  thumbColor: const Color.fromARGB(255, 100, 200, 255),
-                  onChanged: (value) {
-                    setState(() {
-                      _brightness = value;
-                    });
-                    _setBrightness(value);
-                  },
-                ),
-              ),
-              const SizedBox(width: 8),
-              Icon(
-                Icons.brightness_high,
-                color: Colors.white.withOpacity(0.7),
-                size: 20,
-              ),
-            ],
-          ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
-  Widget _buildScaleButtons() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Scale',
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-            color: Colors.white,
+  Widget _buildBrightnessCard() {
+    return GlassmorphicContainer(
+      width: double.infinity,
+      height: 150,
+      borderRadius: 20,
+      linearGradient: LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [
+          const Color.fromARGB(30, 150, 200, 255).withOpacity(0.12),
+          const Color.fromARGB(20, 120, 170, 240).withOpacity(0.08),
+        ],
+      ),
+      border: 1.2,
+      blur: 40,
+      borderGradient: const LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [],
+      ),
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Brightness',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+              Text(
+                '${_brightness.round()}%',
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.cyan,
+                ),
+              ),
+            ],
           ),
-        ),
-        const SizedBox(height: 8),
-        Row(
-          children: [
-            Expanded(
-              child: _buildScaleButton('100 %', 100),
+          const SizedBox(height: 16),
+          Expanded(
+            child: Row(
+              children: [
+                Icon(
+                  Icons.brightness_low,
+                  color: Colors.white.withOpacity(0.6),
+                  size: 20,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Slider(
+                    value: _brightness,
+                    min: 0.0,
+                    max: 100.0,
+                    divisions: 100,
+                    activeColor: const Color.fromARGB(255, 100, 200, 255),
+                    inactiveColor: Colors.white.withOpacity(0.15),
+                    thumbColor: const Color.fromARGB(255, 100, 200, 255),
+                    onChanged: (value) {
+                      setState(() {
+                        _brightness = value;
+                      });
+                      _setBrightness(value);
+                    },
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Icon(
+                  Icons.brightness_high,
+                  color: Colors.white.withOpacity(0.6),
+                  size: 20,
+                ),
+              ],
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _buildScaleButton('200 %', 200),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildOrientationCard() {
+    return GlassmorphicContainer(
+      width: double.infinity,
+      height: 150,
+      borderRadius: 20,
+      linearGradient: LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [
+          const Color.fromARGB(30, 150, 200, 255).withOpacity(0.12),
+          const Color.fromARGB(20, 120, 170, 240).withOpacity(0.08),
+        ],
+      ),
+      border: 1.2,
+      blur: 40,
+      borderGradient: const LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [],
+      ),
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Orientation',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
             ),
-          ],
-        ),
-      ],
+          ),
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.05),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Text(
+              _orientation,
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: Colors.white,
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Expanded(
+            child: DropdownButton<String>(
+              value: _orientation,
+              isExpanded: true,
+              underline: const SizedBox(),
+              dropdownColor: const Color.fromARGB(255, 12, 12, 12),
+              style: const TextStyle(color: Colors.white, fontSize: 13),
+              items: ['Landscape', 'Portrait'].map((option) {
+                return DropdownMenuItem<String>(
+                  value: option,
+                  child: Text(option),
+                );
+              }).toList(),
+              onChanged: (newValue) {
+                if (newValue != null) _setOrientation(newValue);
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildScaleCard() {
+    return GlassmorphicContainer(
+      width: double.infinity,
+      height: 150,
+      borderRadius: 20,
+      linearGradient: LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [
+          const Color.fromARGB(30, 150, 200, 255).withOpacity(0.12),
+          const Color.fromARGB(20, 120, 170, 240).withOpacity(0.08),
+        ],
+      ),
+      border: 1.2,
+      blur: 40,
+      borderGradient: const LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [],
+      ),
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Scale',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Expanded(
+            child: Row(
+              children: [
+                Expanded(
+                  child: _buildScaleButton('100%', 100),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _buildScaleButton('200%', 200),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNightLightCard() {
+    return GlassmorphicContainer(
+      width: double.infinity,
+      height: 150,
+      borderRadius: 20,
+      linearGradient: LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [
+          const Color.fromARGB(30, 150, 200, 255).withOpacity(0.12),
+          const Color.fromARGB(20, 120, 170, 240).withOpacity(0.08),
+        ],
+      ),
+      border: 1.2,
+      blur: 40,
+      borderGradient: const LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [],
+      ),
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Night Light',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+              Switch(
+                value: _nightLight,
+                onChanged: (value) => _setNightLight(value),
+                activeColor: Colors.orangeAccent,
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Expanded(
+            child: Align(
+              alignment: Alignment.bottomLeft,
+              child: Text(
+                _nightLight ? 'Reduces blue light' : 'Off',
+                style: TextStyle(
+                  fontSize: 13,
+                  color: Colors.white.withOpacity(0.6),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFractionalScalingSection() {
+    return GlassmorphicContainer(
+      width: double.infinity,
+      height: 100,
+      borderRadius: 20,
+      linearGradient: LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [
+          const Color.fromARGB(30, 150, 200, 255).withOpacity(0.12),
+          const Color.fromARGB(20, 120, 170, 240).withOpacity(0.08),
+        ],
+      ),
+      border: 1.2,
+      blur: 40,
+      borderGradient: const LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [],
+      ),
+      padding: const EdgeInsets.all(24),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Text(
+                  'Fractional Scaling',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'May impact performance',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.white.withOpacity(0.6),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Switch(
+            value: _fractionalScaling,
+            onChanged: (value) => _setFractionalScaling(value),
+            activeColor: Colors.tealAccent,
+          ),
+        ],
+      ),
     );
   }
 
@@ -1932,111 +2064,4 @@ class _DisplaySettingsPageState extends State<DisplaySettingsPage> {
       ),
     );
   }
-
-  Widget _buildToggleSetting(
-    String label,
-    bool value,
-    String? description,
-    ValueChanged<bool> onChanged,
-  ) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    label,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.white,
-                    ),
-                  ),
-                  if (description != null) ...[
-                    const SizedBox(height: 4),
-                    Text(
-                      description,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.white.withOpacity(0.6),
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-            Switch(
-              value: value,
-              onChanged: onChanged,
-              activeColor: Colors.tealAccent,
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildNightLightSetting() {
-    return InkWell(
-      onTap: () => _setNightLight(!_nightLight),
-      borderRadius: BorderRadius.circular(16),
-      child: GlassmorphicContainer(
-        width: double.infinity,
-        height: 56,
-        borderRadius: 16,
-        linearGradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Colors.white.withOpacity(0.08),
-            Colors.white.withOpacity(0.03),
-          ],
-        ),
-        border: 1.2,
-        blur: 26,
-        borderGradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [],
-        ),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            const Text(
-              'Night Light',
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-                color: Colors.white,
-              ),
-            ),
-            Row(
-              children: [
-                Text(
-                  _nightLight ? 'On' : 'Off',
-                  style: TextStyle(
-                    color: Colors.white.withOpacity(0.7),
-                    fontSize: 14,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                const Icon(
-                  Icons.arrow_forward_ios,
-                  size: 16,
-                  color: Colors.white54,
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 }
-

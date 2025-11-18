@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:dbus/dbus.dart';
-import 'package:antidote/glassmorphic_container.dart';
 
 class PowerSettingsPage extends StatefulWidget {
   const PowerSettingsPage({super.key});
@@ -127,145 +126,135 @@ class _PowerSettingsPageState extends State<PowerSettingsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.transparent,
-      body: Center(
-        child: GlassmorphicContainer(
-          width: 600,
-          height: MediaQuery.of(context).size.height * 0.85,
-          borderRadius: 24,
-          linearGradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              const Color.fromARGB(40, 120, 180, 240).withOpacity(0.12),
-              const Color.fromARGB(30, 100, 150, 220).withOpacity(0.08),
-              const Color.fromARGB(25, 80, 130, 200).withOpacity(0.06),
-            ],
-            stops: const [0.0, 0.5, 1.0],
-          ),
-          border: 1.2,
-          blur: 26,
-          borderGradient: const LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [],
-          ),
-          padding: const EdgeInsets.all(32),
-          child: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Power',
-                  style: TextStyle(
-                    fontSize: 32,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                    letterSpacing: 0.5,
-                  ),
+      backgroundColor: const Color.fromARGB(255, 0, 0, 0),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Power',
+              style: TextStyle(
+                fontSize: 40,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+                letterSpacing: 0.5,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Opacity(
+              opacity: 0.6,
+              child: const Text(
+                'Manage battery and power settings',
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.white,
+                  letterSpacing: 0.5,
+                  fontWeight: FontWeight.w300,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 32),
-                // Battery
-                _buildBatteryTile(),
-                const SizedBox(height: 32),
-                // Power Profiles
-                const Text(
-                  'Performance',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.white54,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Container(
-                  height: 60,
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        Color.fromARGB(12, 255, 255, 255),
-                        Color.fromARGB(10, 255, 255, 255),
-                      ],
-                    ),
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.2),
-                        blurRadius: 12,
-                        offset: const Offset(0, 8),
-                      ),
-                    ],
-                  ),
-                  child: Row(
-                    children: [
-                      _buildProfileBtn(
-                        'Saver',
-                        Icons.eco_rounded,
-                        'power-saver',
-                        Colors.greenAccent,
-                      ),
-                      _buildProfileBtn(
-                        'Balanced',
-                        Icons.balance_rounded,
-                        'balanced',
-                        Colors.blueAccent,
-                      ),
-                      _buildProfileBtn(
-                        'Boost',
-                        Icons.speed_rounded,
-                        'performance',
-                        Colors.redAccent,
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 32),
-                const Divider(color: Colors.white10, height: 1),
-                const SizedBox(height: 24),
-                // Power Actions
-                const Text(
-                  'System Actions',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.white54,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    _buildPowerButton(
-                      Icons.power_settings_new_rounded,
-                      Colors.redAccent,
-                      'Shutdown',
-                      () => _powerAction('shutdown'),
-                    ),
-                    _buildPowerButton(
-                      Icons.restart_alt_rounded,
-                      Colors.orangeAccent,
-                      'Reboot',
-                      () => _powerAction('reboot'),
-                    ),
-                    _buildPowerButton(
-                      Icons.bedtime_rounded,
-                      Colors.blueAccent,
-                      'Suspend',
-                      () => _powerAction('suspend'),
-                    ),
-                    _buildPowerButton(
-                      Icons.logout_rounded,
-                      Colors.grey,
-                      'Logout',
-                      () => _powerAction('logout'),
-                    ),
+              ),
+            ),
+            const SizedBox(height: 32),
+            // Battery
+            _buildBatteryTile(),
+            const SizedBox(height: 32),
+            // Power Profiles
+            const Text(
+              'Performance',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: Colors.white54,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Container(
+              height: 60,
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Color.fromARGB(12, 255, 255, 255),
+                    Color.fromARGB(10, 255, 255, 255),
                   ],
+                ),
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.2),
+                    blurRadius: 12,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  _buildProfileBtn(
+                    'Saver',
+                    Icons.eco_rounded,
+                    'power-saver',
+                    Colors.greenAccent,
+                  ),
+                  _buildProfileBtn(
+                    'Balanced',
+                    Icons.balance_rounded,
+                    'balanced',
+                    Colors.blueAccent,
+                  ),
+                  _buildProfileBtn(
+                    'Boost',
+                    Icons.speed_rounded,
+                    'performance',
+                    Colors.redAccent,
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 32),
+            const Divider(color: Colors.white10, height: 1),
+            const SizedBox(height: 24),
+            // Power Actions
+            const Text(
+              'System Actions',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: Colors.white54,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                _buildPowerButton(
+                  Icons.power_settings_new_rounded,
+                  Colors.redAccent,
+                  'Shutdown',
+                  () => _powerAction('shutdown'),
+                ),
+                _buildPowerButton(
+                  Icons.restart_alt_rounded,
+                  Colors.orangeAccent,
+                  'Reboot',
+                  () => _powerAction('reboot'),
+                ),
+                _buildPowerButton(
+                  Icons.bedtime_rounded,
+                  Colors.blueAccent,
+                  'Suspend',
+                  () => _powerAction('suspend'),
+                ),
+                _buildPowerButton(
+                  Icons.logout_rounded,
+                  Colors.grey,
+                  'Logout',
+                  () => _powerAction('logout'),
                 ),
               ],
             ),
-          ),
+          ],
         ),
       ),
     );

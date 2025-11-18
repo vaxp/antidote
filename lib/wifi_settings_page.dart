@@ -10,32 +10,10 @@ class WiFiSettingsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.transparent,
-      body: Center(
-        child: GlassmorphicContainer(
-          width: 600,
-          height: MediaQuery.of(context).size.height * 0.85,
-          borderRadius: 24,
-          linearGradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              const Color.fromARGB(40, 120, 180, 240).withOpacity(0.12),
-              const Color.fromARGB(30, 100, 150, 220).withOpacity(0.08),
-              const Color.fromARGB(25, 80, 130, 200).withOpacity(0.06),
-            ],
-            stops: const [0.0, 0.5, 1.0],
-          ),
-          border: 1.2,
-          blur: 26,
-          borderGradient: const LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [],
-          ),
-          padding: const EdgeInsets.all(32),
-          child: const WiFiManagerContent(),
-        ),
+      backgroundColor: const Color.fromARGB(255, 0, 0, 0),
+      body: Padding(
+        padding: const EdgeInsets.all(32),
+        child: const WiFiManagerContent(),
       ),
     );
   }
@@ -716,21 +694,30 @@ class _WiFiManagerContentState extends State<WiFiManagerContent> {
   @override
   Widget build(BuildContext context) {
     return Column(
-      mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Wi-Fi Toggle Section
+        // Header
+        const Text(
+          'Wi-Fi',
+          style: TextStyle(
+            fontSize: 40,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+            letterSpacing: 0.5,
+          ),
+        ),
+        const SizedBox(height: 8),
+        // Toggle and Status
         Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text(
-              'Wi-Fi',
+            Text(
+              'Manage wireless networks',
               style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
+                fontSize: 16,
+                color: Colors.white.withOpacity(0.6),
               ),
             ),
-            const Spacer(),
             Row(
               children: [
                 Text(
@@ -751,18 +738,19 @@ class _WiFiManagerContentState extends State<WiFiManagerContent> {
             ),
           ],
         ),
-        const SizedBox(height: 24),
+        const SizedBox(height: 48),
+        // Title and scan button
         Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             const Text(
-              'Wi-Fi Networks',
+              'Available Networks',
               style: TextStyle(
-                fontSize: 20,
+                fontSize: 24,
                 fontWeight: FontWeight.bold,
                 color: Colors.white,
               ),
             ),
-            const Spacer(),
             if (_isScanning)
               const SizedBox(
                 width: 20,
@@ -781,186 +769,265 @@ class _WiFiManagerContentState extends State<WiFiManagerContent> {
           ],
         ),
         const SizedBox(height: 24),
-        if (_error != null)
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.red.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.red.withOpacity(0.2)),
-            ),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.error_outline_rounded,
-                  color: Colors.red.shade300,
-                  size: 20,
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    _error!,
-                    style: TextStyle(
-                      color: Colors.red.shade300,
-                      fontSize: 13,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          )
-        else if (_isLoading)
-          const Expanded(
-            child: Center(
-              child: CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation(Colors.tealAccent),
-              ),
-            ),
-          )
-        else if (!_wifiEnabled)
-          Expanded(
-            child: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.wifi_off_rounded,
-                    size: 48,
-                    color: Colors.white.withOpacity(0.2),
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Wi-Fi is turned off',
-                    style: TextStyle(
-                      color: Colors.white.withOpacity(0.5),
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Turn on Wi-Fi to see available networks',
-                    style: TextStyle(
-                      color: Colors.white.withOpacity(0.4),
-                      fontSize: 14,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          )
-        else if (_networks.isEmpty)
-          Expanded(
-            child: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.wifi_find_rounded,
-                    size: 48,
-                    color: Colors.white.withOpacity(0.1),
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'No networks found',
-                    style: TextStyle(
-                      color: Colors.white.withOpacity(0.3),
-                      fontSize: 16,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          )
-        else
-          Expanded(
-            child: ListView.separated(
-              itemCount: _networks.length,
-              separatorBuilder: (_, __) =>
-                  const Divider(color: Colors.white10, height: 1),
-              itemBuilder: (context, index) {
-                final network = _networks[index];
-                final isConnecting = _connectingTo == network.ssid;
+        // Networks list
+        Expanded(
+          child: _buildNetworksList(),
+        ),
+      ],
+    );
+  }
 
-                return ListTile(
-                  onTap: (isConnecting || !_wifiEnabled)
-                      ? null
-                      : () => _connectToNetwork(network),
-                  contentPadding: EdgeInsets.zero,
-                  leading: Icon(
-                    network.strength > 80
-                        ? Icons.wifi_rounded
-                        : network.strength > 60
-                        ? Icons.network_wifi_3_bar_rounded
-                        : network.strength > 40
-                        ? Icons.network_wifi_2_bar_rounded
-                        : Icons.network_wifi_1_bar_rounded,
-                    color: network.isConnected
-                        ? Colors.tealAccent
-                        : Colors.white54,
+  Widget _buildNetworksList() {
+    if (_error != null) {
+      return Center(
+        child: GlassmorphicContainer(
+          width: double.infinity,
+          borderRadius: 16,
+          linearGradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Colors.red.withOpacity(0.1),
+              Colors.red.withOpacity(0.05),
+            ],
+          ),
+          border: 1.2,
+          blur: 40,
+          borderGradient: const LinearGradient(colors: []),
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              Icon(
+                Icons.error_outline_rounded,
+                color: Colors.red.shade300,
+                size: 20,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  _error!,
+                  style: TextStyle(
+                    color: Colors.red.shade300,
+                    fontSize: 13,
                   ),
-                  title: Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          network.ssid,
-                          style: TextStyle(
-                            color: network.isConnected
-                                ? Colors.white
-                                : Colors.white70,
-                            fontWeight: network.isConnected
-                                ? FontWeight.bold
-                                : FontWeight.normal,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    if (_isLoading) {
+      return const Center(
+        child: CircularProgressIndicator(
+          valueColor: AlwaysStoppedAnimation(Colors.tealAccent),
+        ),
+      );
+    }
+
+    if (!_wifiEnabled) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.wifi_off_rounded,
+              size: 48,
+              color: Colors.white.withOpacity(0.2),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Wi-Fi is turned off',
+              style: TextStyle(
+                color: Colors.white.withOpacity(0.5),
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Turn on Wi-Fi to see available networks',
+              style: TextStyle(
+                color: Colors.white.withOpacity(0.4),
+                fontSize: 14,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (_networks.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.wifi_find_rounded,
+              size: 48,
+              color: Colors.white.withOpacity(0.1),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'No networks found',
+              style: TextStyle(
+                color: Colors.white.withOpacity(0.3),
+                fontSize: 16,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return ListView.separated(
+      itemCount: _networks.length,
+      separatorBuilder: (_, __) => const Divider(
+        color: Colors.white10,
+        height: 1,
+        indent: 0,
+        endIndent: 0,
+      ),
+      itemBuilder: (context, index) {
+        final network = _networks[index];
+        final isConnecting = _connectingTo == network.ssid;
+
+        return GlassmorphicContainer(
+          width: double.infinity,
+          height: 72,
+          borderRadius: 16,
+          linearGradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              network.isConnected
+                  ? Colors.teal.withOpacity(0.15)
+                  : Colors.white.withOpacity(0.05),
+              network.isConnected
+                  ? Colors.teal.withOpacity(0.08)
+                  : Colors.white.withOpacity(0.03),
+            ],
+          ),
+          border: 1.2,
+          blur: 30,
+          borderGradient: const LinearGradient(colors: []),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          child: Row(
+            children: [
+              Icon(
+                network.strength > 80
+                    ? Icons.wifi_rounded
+                    : network.strength > 60
+                    ? Icons.network_wifi_3_bar_rounded
+                    : network.strength > 40
+                    ? Icons.network_wifi_2_bar_rounded
+                    : Icons.network_wifi_1_bar_rounded,
+                color: network.isConnected
+                    ? Colors.tealAccent
+                    : Colors.white54,
+                size: 24,
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            network.ssid,
+                            style: TextStyle(
+                              color: network.isConnected
+                                  ? Colors.white
+                                  : Colors.white70,
+                              fontWeight: network.isConnected
+                                  ? FontWeight.bold
+                                  : FontWeight.normal,
+                              fontSize: 15,
+                            ),
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                      ),
-                      if (network.isSecure)
-                        Padding(
-                          padding: const EdgeInsets.only(left: 8),
-                          child: Icon(
-                            Icons.lock_rounded,
-                            size: 16,
-                            color: Colors.white.withOpacity(0.3),
-                          ),
-                        ),
-                    ],
-                  ),
-                  subtitle: Text(
-                    network.isConnected
-                        ? 'Connected'
-                        : network.isSaved
-                        ? 'Saved'
-                        : '${network.strength}% signal',
-                    style: TextStyle(
-                      color: network.isConnected
-                          ? Colors.tealAccent
-                          : Colors.white38,
-                      fontSize: 12,
-                    ),
-                  ),
-                  trailing: isConnecting
-                      ? const SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation(
-                              Colors.tealAccent,
+                        if (network.isSecure)
+                          Padding(
+                            padding: const EdgeInsets.only(left: 8),
+                            child: Icon(
+                              Icons.lock_rounded,
+                              size: 14,
+                              color: Colors.white.withOpacity(0.3),
                             ),
                           ),
-                        )
-                      : network.isSaved
-                      ? IconButton(
-                          icon: const Icon(Icons.close_rounded, size: 18),
-                          color: Colors.white38,
-                          onPressed: () => _forgetNetwork(network),
-                        )
-                      : null,
-                );
-              },
-            ),
+                      ],
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      network.isConnected
+                          ? 'Connected'
+                          : network.isSaved
+                          ? 'Saved'
+                          : '${network.strength}% signal',
+                      style: TextStyle(
+                        color: network.isConnected
+                            ? Colors.tealAccent
+                            : Colors.white38,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              if (isConnecting)
+                const SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation(
+                      Colors.tealAccent,
+                    ),
+                  ),
+                )
+              else if (network.isConnected)
+                const Icon(
+                  Icons.check_circle_rounded,
+                  color: Colors.tealAccent,
+                  size: 24,
+                )
+              else if (network.isSaved)
+                IconButton(
+                  icon: const Icon(Icons.close_rounded, size: 18),
+                  color: Colors.white38,
+                  onPressed: () => _forgetNetwork(network),
+                  padding: EdgeInsets.zero,
+                  visualDensity: VisualDensity.compact,
+                )
+              else
+                Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: () => _connectToNetwork(network),
+                    borderRadius: BorderRadius.circular(8),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      child: Text(
+                        'Connect',
+                        style: TextStyle(
+                          color: const Color.fromARGB(255, 100, 200, 255),
+                          fontWeight: FontWeight.w600,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+            ],
           ),
-      ],
+        );
+      },
     );
   }
 }

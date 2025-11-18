@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 import 'package:dbus/dbus.dart';
 import 'package:flutter/material.dart';
+import 'package:antidote/glassmorphic_container.dart';
 
 class BluetoothSettingsPage extends StatelessWidget {
   const BluetoothSettingsPage({super.key});
@@ -9,32 +10,10 @@ class BluetoothSettingsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color.fromARGB(0, 0, 0, 0),
-      body: Center(
-        child: Container(
-          width: 500,
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [
-                Color.fromARGB(220, 28, 32, 44),
-                Color.fromARGB(180, 18, 20, 30),
-              ],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.circular(36),
-            border: Border.all(color: Colors.white.withOpacity(0.06)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.45),
-                blurRadius: 30,
-                offset: const Offset(0, 8),
-              ),
-            ],
-          ),
-          child: const BluetoothManagerContent(),
-        ),
+      backgroundColor: const Color.fromARGB(255, 0, 0, 0),
+      body: Padding(
+        padding: const EdgeInsets.all(32),
+        child: const BluetoothManagerContent(),
       ),
     );
   }
@@ -403,19 +382,30 @@ class _BluetoothManagerContentState extends State<BluetoothManagerContent> {
   @override
   Widget build(BuildContext context) {
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Bluetooth Toggle Section
+        // Header
+        const Text(
+          'Bluetooth',
+          style: TextStyle(
+            fontSize: 40,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+            letterSpacing: 0.5,
+          ),
+        ),
+        const SizedBox(height: 8),
+        // Toggle and Status
         Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text(
-              'Bluetooth',
+            Text(
+              'Manage paired and nearby devices',
               style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
+                fontSize: 16,
+                color: Colors.white.withOpacity(0.6),
               ),
             ),
-            const Spacer(),
             Row(
               children: [
                 Text(
@@ -438,160 +428,254 @@ class _BluetoothManagerContentState extends State<BluetoothManagerContent> {
             ),
           ],
         ),
-        const SizedBox(height: 24),
+        const SizedBox(height: 48),
+        // Title and scan button
         Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Icon(
-              Icons.bluetooth_audio_rounded,
-              color: Colors.blueAccent,
-              size: 32,
-            ),
-            const SizedBox(width: 16),
             const Text(
-              "Bluetooth Manager",
+              'Nearby Devices',
               style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.w600,
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
                 color: Colors.white,
               ),
             ),
-            const Spacer(),
             if (_adapterPath == null && !_isInitializing)
               const Tooltip(
                 message: "No Adapter",
                 child: Icon(Icons.error_outline, color: Colors.redAccent),
               ),
-            IconButton(
-              onPressed: (_isInitializing || _adapterPath == null || !_bluetoothEnabled)
-                  ? null
-                  : (_isScanning ? _stopScan : _startScan),
-              icon: _isScanning
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2.5,
-                        color: Colors.blueAccent,
-                      ),
-                    )
-                  : Icon(
-                      Icons.refresh_rounded,
-                      color: _bluetoothEnabled ? Colors.white70 : Colors.white.withOpacity(0.3),
-                    ),
-              tooltip: _isScanning ? "Stop Scanning" : "Start Scanning",
+            if (_isScanning)
+              const SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation(Colors.blueAccent),
+                ),
+              )
+            else
+              IconButton(
+                onPressed: (_isInitializing || _adapterPath == null || !_bluetoothEnabled)
+                    ? null
+                    : (_isScanning ? _stopScan : _startScan),
+                icon: const Icon(Icons.refresh_rounded),
+                color: _bluetoothEnabled ? Colors.white70 : Colors.white.withOpacity(0.3),
+                tooltip: _isScanning ? "Stop Scanning" : "Start Scanning",
+              ),
+          ],
+        ),
+        const SizedBox(height: 24),
+        // Devices list
+        Expanded(
+          child: _buildDevicesList(),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDevicesList() {
+    if (_isInitializing) {
+      return const Center(
+        child: CircularProgressIndicator(
+          color: Colors.blueAccent,
+        ),
+      );
+    }
+
+    if (!_bluetoothEnabled) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.bluetooth_disabled_rounded,
+              size: 48,
+              color: Colors.white.withOpacity(0.2),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Bluetooth is turned off',
+              style: TextStyle(
+                color: Colors.white.withOpacity(0.5),
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Turn on Bluetooth to see available devices',
+              style: TextStyle(
+                color: Colors.white.withOpacity(0.4),
+                fontSize: 14,
+              ),
             ),
           ],
         ),
-        const Divider(color: Color.fromARGB(78, 255, 255, 255), height: 30),
-        Expanded(
-          child: _isInitializing
-              ? const Center(
-                  child: CircularProgressIndicator(
-                    color: Colors.blueAccent,
-                  ),
-                )
-              : !_bluetoothEnabled
-              ? Center(
+      );
+    }
+
+    if (_devices.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.bluetooth_searching_rounded,
+              size: 48,
+              color: Colors.white.withOpacity(0.1),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'No devices found',
+              style: TextStyle(
+                color: Colors.white.withOpacity(0.3),
+                fontSize: 16,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return ListView.separated(
+      itemCount: _devices.length,
+      separatorBuilder: (_, __) => const SizedBox(height: 12),
+      itemBuilder: (context, index) {
+        final dev = _devices[index];
+        final isConnected = dev['connected'] as bool;
+        final isPaired = dev['paired'] as bool;
+
+        return GestureDetector(
+          onTap: (isConnected)
+              ? () => _disconnectDevice(dev['path'])
+              : () => _connectDevice(dev['path']),
+          child: GlassmorphicContainer(
+            width: double.infinity,
+            height: 100,
+            borderRadius: 16,
+            linearGradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: isConnected
+                  ? [
+                Colors.blue.withOpacity(0.2),
+                Colors.blue.withOpacity(0.1),
+              ]
+                  : [
+                Colors.white.withOpacity(0.05),
+                Colors.white.withOpacity(0.02),
+              ],
+            ),
+            border: 1.2,
+            blur: 30,
+            borderGradient: const LinearGradient(colors: []),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            child: Row(
+              children: [
+                Icon(
+                  isConnected
+                      ? Icons.bluetooth_connected
+                      : Icons.bluetooth,
+                  color: isConnected
+                      ? Colors.blue
+                      : (isPaired ? Colors.white : Colors.white54),
+                  size: 32,
+                ),
+                const SizedBox(width: 16),
+                Expanded(
                   child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(
-                        Icons.bluetooth_disabled_rounded,
-                        size: 48,
-                        color: Colors.white.withOpacity(0.2),
-                      ),
-                      const SizedBox(height: 16),
                       Text(
-                        'Bluetooth is turned off',
+                        dev['name'],
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: isConnected
+                              ? FontWeight.bold
+                              : FontWeight.normal,
+                          fontSize: 15,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        dev['address'],
                         style: TextStyle(
                           color: Colors.white.withOpacity(0.5),
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
+                          fontSize: 12,
                         ),
                       ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Turn on Bluetooth to see available devices',
-                        style: TextStyle(
-                          color: Colors.white.withOpacity(0.4),
-                          fontSize: 14,
-                        ),
-                      ),
-                    ],
-                  ),
-                )
-              : _devices.isEmpty
-              ? Center(
-                  child: Text(
-                    "No devices found",
-                    style: TextStyle(color: Colors.white.withOpacity(0.3)),
-                  ),
-                )
-              : ListView.builder(
-                  itemCount: _devices.length,
-                  itemBuilder: (context, index) {
-                    final dev = _devices[index];
-                    final isConnected = dev['connected'] as bool;
-                    final isPaired = dev['paired'] as bool;
-                    return Container(
-                      margin: const EdgeInsets.only(bottom: 8),
-                      decoration: BoxDecoration(
-                        color: isConnected
-                            ? Colors.blueAccent.withOpacity(0.15)
-                            : Colors.white.withOpacity(0.05),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: ListTile(
-                        leading: Icon(
-                          isConnected
-                              ? Icons.bluetooth_connected
-                              : Icons.bluetooth,
-                          color: isConnected
-                              ? Colors.blue
-                              : (isPaired ? Colors.white : Colors.white54),
-                        ),
-                        title: Text(
-                          dev['name'],
+                      if (dev['rssi'] > -100)
+                        Text(
+                          "${dev['rssi']} dBm",
                           style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: isConnected
-                                ? FontWeight.bold
-                                : FontWeight.normal,
+                            color: Colors.white.withOpacity(0.4),
+                            fontSize: 11,
                           ),
                         ),
-                        subtitle: Text(
-                          "${dev['address']} ${dev['rssi'] > -100 ? '(${dev['rssi']} dBm)' : ''}",
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    if (isConnected)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.red.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: Colors.red.withOpacity(0.4),
+                            width: 0.8,
+                          ),
+                        ),
+                        child: const Text(
+                          'Disconnect',
                           style: TextStyle(
-                            color: Colors.white.withOpacity(0.5),
+                            color: Colors.red,
+                            fontWeight: FontWeight.w600,
                             fontSize: 12,
                           ),
                         ),
-                        trailing: isConnected
-                            ? TextButton(
-                                onPressed: () =>
-                                    _disconnectDevice(dev['path']),
-                                child: const Text(
-                                  "Disconnect",
-                                  style: TextStyle(color: Colors.redAccent),
-                                ),
-                              )
-                            : OutlinedButton(
-                                onPressed: () =>
-                                    _connectDevice(dev['path']),
-                                style: OutlinedButton.styleFrom(
-                                  foregroundColor: Colors.blueAccent,
-                                  side: const BorderSide(
-                                    color: Colors.blueAccent,
-                                  ),
-                                ),
-                                child: Text(isPaired ? "Connect" : "Pair"),
-                              ),
+                      )
+                    else
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.blue.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: Colors.blue.withOpacity(0.4),
+                            width: 0.8,
+                          ),
+                        ),
+                        child: Text(
+                          isPaired ? 'Connect' : 'Pair',
+                          style: const TextStyle(
+                            color: Colors.blueAccent,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 12,
+                          ),
+                        ),
                       ),
-                    );
-                  },
+                  ],
                 ),
-        ),
-      ],
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }

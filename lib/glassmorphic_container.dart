@@ -44,7 +44,7 @@ class GlassmorphicContainer extends StatelessWidget {
       child: ClipRRect(
         borderRadius: BorderRadius.circular(borderRadius),
         child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: blur, sigmaY: blur),
+          filter: ImageFilter.blur(sigmaX: blur * 1.5, sigmaY: blur * 1.5),
           child: Container(
             width: width,
             height: height,
@@ -56,7 +56,7 @@ class GlassmorphicContainer extends StatelessWidget {
               border: border > 0
                   ? Border.all(
                       width: border,
-                      color: Colors.white.withOpacity(0.2),
+                      color: Colors.white.withOpacity(0.15),
                     )
                   : null,
             ),

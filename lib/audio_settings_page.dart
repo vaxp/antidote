@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:antidote/glassmorphic_container.dart';
 
 class AudioDevice {
   final String name;
@@ -442,55 +441,39 @@ class _AudioSettingsPageState extends State<AudioSettingsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.transparent,
-      body: Center(
-        child: GlassmorphicContainer(
-          width: 600,
-          height: MediaQuery.of(context).size.height * 0.85,
-          borderRadius: 24,
-          linearGradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              const Color.fromARGB(40, 120, 180, 240).withOpacity(0.12),
-              const Color.fromARGB(30, 100, 150, 220).withOpacity(0.08),
-              const Color.fromARGB(25, 80, 130, 200).withOpacity(0.06),
-            ],
-            stops: const [0.0, 0.5, 1.0],
-          ),
-          border: 1.2,
-          blur: 26,
-          borderGradient: const LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [],
-          ),
-          padding: const EdgeInsets.all(32),
-          child: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Sound',
-                  style: TextStyle(
-                    fontSize: 32,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-                const SizedBox(height: 32),
-                // Output Section
-                _buildOutputSection(),
-                const SizedBox(height: 32),
-                // Input Section
-                _buildInputSection(),
-                const SizedBox(height: 32),
-                // Sounds Section
-                _buildSoundsSection(),
-              ],
+      backgroundColor: const Color.fromARGB(255, 0, 0, 0),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Sound',
+              style: TextStyle(
+                fontSize: 40,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+                letterSpacing: 0.5,
+              ),
             ),
-          ),
+            const SizedBox(height: 8),
+            Text(
+              'Configure audio devices and settings',
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.white.withOpacity(0.6),
+              ),
+            ),
+            const SizedBox(height: 48),
+            // Output Section
+            _buildOutputSection(),
+            const SizedBox(height: 32),
+            // Input Section
+            _buildInputSection(),
+            const SizedBox(height: 32),
+            // Sounds Section
+            _buildSoundsSection(),
+          ],
         ),
       ),
     );

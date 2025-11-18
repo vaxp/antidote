@@ -85,18 +85,8 @@ class _SettingsHomePageState extends State<SettingsHomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              const Color.fromARGB(255, 8, 10, 18),
-              const Color.fromARGB(255, 12, 15, 25),
-              const Color.fromARGB(255, 10, 13, 22),
-              const Color.fromARGB(255, 14, 17, 28),
-            ],
-            stops: const [0.0, 0.3, 0.7, 1.0],
-          ),
+        decoration: const BoxDecoration(
+          color: Color.fromARGB(255, 0, 0, 0),
         ),
         child: Row(
           children: [
@@ -109,14 +99,13 @@ class _SettingsHomePageState extends State<SettingsHomePage> {
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  const Color.fromARGB(35, 100, 150, 200).withOpacity(0.15),
-                  const Color.fromARGB(25, 80, 120, 180).withOpacity(0.1),
-                  const Color.fromARGB(20, 60, 100, 160).withOpacity(0.08),
+                  const Color.fromARGB(0, 0, 00, 00),
+                  const Color.fromARGB(0, 00, 00, 00),
                 ],
-                stops: const [0.0, 0.5, 1.0],
+                stops: const [0.0, 0.0],
               ),
-              border: 0,
-              blur: 26,
+              border: 0.8,
+              blur: 40,
               borderGradient: const LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
@@ -166,7 +155,7 @@ class _SettingsHomePageState extends State<SettingsHomePage> {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       child: Material(
-        color: Colors.transparent,
+        color: const Color.fromARGB(0, 0, 0, 0),
         child: InkWell(
           onTap: () => setState(() => _selectedIndex = index),
           borderRadius: BorderRadius.circular(16),
@@ -180,9 +169,9 @@ class _SettingsHomePageState extends State<SettingsHomePage> {
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                       colors: [
-                        const Color.fromARGB(255, 64, 200, 255).withOpacity(0.25),
-                        const Color.fromARGB(255, 100, 150, 255).withOpacity(0.15),
-                        const Color.fromARGB(255, 80, 120, 220).withOpacity(0.1),
+                        const Color.fromARGB(255, 64, 200, 255).withOpacity(0.35),
+                        const Color.fromARGB(255, 100, 150, 255).withOpacity(0.25),
+                        const Color.fromARGB(255, 80, 120, 220).withOpacity(0.15),
                       ],
                       stops: const [0.0, 0.5, 1.0],
                     )
@@ -190,11 +179,11 @@ class _SettingsHomePageState extends State<SettingsHomePage> {
               borderRadius: BorderRadius.circular(16),
               border: isSelected
                   ? Border.all(
-                      color: const Color.fromARGB(255, 64, 200, 255).withOpacity(0.5),
-                      width: 1.2,
+                      color: const Color.fromARGB(255, 64, 200, 255).withOpacity(0.6),
+                      width: 1.5,
                     )
                   : Border.all(
-                      color: Colors.white.withOpacity(0.08),
+                      color: Colors.white.withOpacity(0.1),
                       width: 1,
                     ),
             ),
@@ -203,8 +192,8 @@ class _SettingsHomePageState extends State<SettingsHomePage> {
                 Icon(
                   item.icon,
                   color: isSelected 
-                      ? const Color.fromARGB(255, 100, 200, 255)
-                      : Colors.white.withOpacity(0.65),
+                      ? const Color.fromARGB(255, 120, 210, 255)
+                      : Colors.white.withOpacity(0.7),
                   size: 22,
                 ),
                 const SizedBox(width: 14),
@@ -213,8 +202,8 @@ class _SettingsHomePageState extends State<SettingsHomePage> {
                   style: TextStyle(
                     color: isSelected 
                         ? Colors.white 
-                        : Colors.white.withOpacity(0.75),
-                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                        : Colors.white.withOpacity(0.8),
+                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                     fontSize: 15,
                     letterSpacing: 0.3,
                   ),
