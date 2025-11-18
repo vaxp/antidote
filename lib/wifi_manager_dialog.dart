@@ -501,7 +501,7 @@ class _WiFiManagerDialogState extends State<WiFiManagerDialog> {
         bool obscureText = true;
 
         return AlertDialog(
-          backgroundColor: const Color.fromARGB(255, 18, 22, 32),
+          backgroundColor: const Color.fromARGB(0, 0, 0, 0),
           surfaceTintColor: Colors.transparent,
           title: const Text(
             'Enter Password',

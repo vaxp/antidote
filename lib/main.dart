@@ -20,6 +20,14 @@ class VenomLabApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        useMaterial3: true,
+        scaffoldBackgroundColor: Colors.transparent,
+        brightness: Brightness.dark,
+        canvasColor: Colors.transparent,
+        cardColor: Colors.transparent,
+        dialogBackgroundColor: Colors.transparent,
+      ),
       home: const SettingsHomePage(),
     );
   }
@@ -86,7 +94,7 @@ class _SettingsHomePageState extends State<SettingsHomePage> {
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(
-          color: Color.fromARGB(255, 0, 0, 0),
+          color: Color.fromARGB(122, 0, 0, 0),
         ),
         child: Row(
           children: [

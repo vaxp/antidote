@@ -56,7 +56,7 @@ class GlassmorphicContainer extends StatelessWidget {
               border: border > 0
                   ? Border.all(
                       width: border,
-                      color: Colors.white.withOpacity(0.15),
+                      color: const Color.fromARGB(200, 0, 0, 0),
                     )
                   : null,
             ),

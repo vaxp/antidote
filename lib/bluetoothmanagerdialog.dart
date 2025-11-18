@@ -309,7 +309,7 @@ class _BluetoothManagerDialogState extends State<BluetoothManagerDialog> {
   @override
   Widget build(BuildContext context) {
     return Dialog(
-      backgroundColor: const Color.fromARGB(172, 0, 0, 0),
+      backgroundColor: const Color.fromARGB(0, 0, 0, 0),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Container(
         width: 450,
