@@ -1,3 +1,4 @@
+import 'package:antidote/appbar.dart';
 import 'package:antidote/venom_effects.dart';
 import 'package:flutter/material.dart';
 import 'package:antidote/display_settings_page.dart';
@@ -9,8 +10,26 @@ import 'package:antidote/mouse_settings_page.dart';
 import 'package:antidote/keyboard_settings_page.dart';
 import 'package:antidote/system_settings_page.dart';
 import 'package:antidote/glassmorphic_container.dart';
+import 'package:window_manager/window_manager.dart';
 
-void main() {
+Future<void> main() async {
+    // Initialize Flutter bindings first to ensure the binary messenger is ready
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize window manager for desktop controls
+  await windowManager.ensureInitialized();
+
+  WindowOptions windowOptions = const WindowOptions(
+    size: Size(1000, 700),
+    center: true,
+    titleBarStyle: TitleBarStyle.hidden, // يخفي شريط مدير النوافذ
+  );
+
+  windowManager.waitUntilReadyToShow(windowOptions, () async {
+    await windowManager.show();
+    await windowManager.focus();
+  });
+
   runApp(const VenomLabApp());
 }
 
@@ -98,6 +117,8 @@ class _SettingsHomePageState extends State<SettingsHomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar:  Appbar(),
+      backgroundColor: Colors.transparent,
       body: Container(
         decoration: const BoxDecoration(
           color: Color.fromARGB(122, 0, 0, 0),
@@ -129,18 +150,7 @@ class _SettingsHomePageState extends State<SettingsHomePage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Padding(
-                    padding: EdgeInsets.only(left: 8, top: 8, bottom: 8),
-                    child: Text(
-                      'Settings',
-                      style: TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-                  ),
+                  
                   const SizedBox(height: 24),
                   Expanded(
                     child: ListView.builder(
