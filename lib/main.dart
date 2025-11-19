@@ -1,3 +1,4 @@
+import 'package:antidote/venom_effects.dart';
 import 'package:flutter/material.dart';
 import 'package:antidote/display_settings_page.dart';
 import 'package:antidote/wifi_settings_page.dart';
@@ -44,9 +45,10 @@ class _SettingsHomePageState extends State<SettingsHomePage> {
   int _selectedIndex = 0;
 
   final List<Widget> _pages = const [
-    DisplaySettingsPage(),
     WiFiSettingsPage(),
     BluetoothSettingsPage(),
+     VenomSettingsApp(),
+     DisplaySettingsPage(),
     AudioSettingsPage(),
     MouseSettingsPage(),
     KeyboardSettingsPage(),
@@ -56,16 +58,20 @@ class _SettingsHomePageState extends State<SettingsHomePage> {
 
   final List<NavigationItem> _navItems = const [
     NavigationItem(
-      icon: Icons.monitor_rounded,
-      label: 'Display',
-    ),
-    NavigationItem(
       icon: Icons.wifi_rounded,
       label: 'Wi-Fi',
     ),
     NavigationItem(
       icon: Icons.bluetooth_rounded,
       label: 'Bluetooth',
+    ),
+        NavigationItem(
+      icon: Icons.theater_comedy_sharp,
+      label: 'Venom Effects',
+    ),
+        NavigationItem(
+      icon: Icons.monitor_rounded,
+      label: 'Display',
     ),
     NavigationItem(
       icon: Icons.volume_up_rounded,
