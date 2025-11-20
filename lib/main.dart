@@ -1,5 +1,6 @@
 import 'package:antidote/appbar.dart';
 import 'package:antidote/venom_effects.dart';
+import 'package:antidote/venom_layout.dart';
 import 'package:flutter/material.dart';
 import 'package:antidote/display_settings_page.dart';
 import 'package:antidote/wifi_settings_page.dart';
@@ -116,12 +117,12 @@ class _SettingsHomePageState extends State<SettingsHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return VenomScaffold (
       appBar:  Appbar(),
-      backgroundColor: Colors.transparent,
+    backgroundColor: const Color.fromARGB(0, 0, 0, 0),
       body: Container(
         decoration: const BoxDecoration(
-          color: Color.fromARGB(122, 0, 0, 0),
+        color:    Color.fromARGB(100, 0, 0, 0),
         ),
         child: Row(
           children: [
@@ -130,23 +131,24 @@ class _SettingsHomePageState extends State<SettingsHomePage> {
               width: 240,
               height: double.infinity,
               borderRadius: 0,
-              linearGradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  const Color.fromARGB(0, 0, 00, 00),
-                  const Color.fromARGB(0, 00, 00, 00),
-                ],
-                stops: const [0.0, 0.0],
-              ),
-              border: 0.8,
-              blur: 40,
+              // This controls the black background border of the sidebar. Set to 0 to remove it.
+              border: 0,
+              blur: 0,
               borderGradient: const LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [],
               ),
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.all(10),
+              alignment: Alignment.topCenter,
+               linearGradient:   LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  const Color.fromARGB(0, 0, 0, 0),
+                  const Color.fromARGB(0, 0, 0, 0),
+                ],  
+               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -179,13 +181,13 @@ class _SettingsHomePageState extends State<SettingsHomePage> {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       child: Material(
-        color: const Color.fromARGB(0, 0, 0, 0),
+        color:  Colors.transparent,
         child: InkWell(
           onTap: () => setState(() => _selectedIndex = index),
           borderRadius: BorderRadius.circular(16),
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 300),
-            curve: Curves.easeInOut,
+            // curve: Curves.easeInOut,
             padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
             decoration: BoxDecoration(
               gradient: isSelected

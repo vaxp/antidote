@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 
 class VenomSettingsApp extends StatelessWidget {
   const VenomSettingsApp({Key? key}) : super(key: key);
-
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -36,6 +35,7 @@ class VenomSettingsApp extends StatelessWidget {
     );
   }
 }
+
 
 class CompositorSettingsPage extends StatefulWidget {
   const CompositorSettingsPage({Key? key}) : super(key: key);
@@ -211,10 +211,9 @@ class _CompositorSettingsPageState extends State<CompositorSettingsPage> {
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoading) return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    if (_isLoading) return const Center(child: CircularProgressIndicator());
 
-    return Scaffold(
-      body: Stack(
+    return Stack(
         children: [
           Container(color: const Color.fromARGB(0, 0, 0, 0),),
           Center(
@@ -223,12 +222,12 @@ class _CompositorSettingsPageState extends State<CompositorSettingsPage> {
                 // width: 550,
                 // height: 750, // زيادة الارتفاع لاستيعاب الأنيميشن
                 decoration: BoxDecoration(
-                  color: const Color.fromARGB(69, 0, 0, 0), 
+                  color: const Color.fromARGB(0, 0, 0, 0), 
                   // borderRadius: BorderRadius.circular(25),
                   // border: Border.all(color: const Color.fromARGB(255, 7, 7, 7).withOpacity(0.6), width: 1.5),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color.fromARGB(92, 0, 0, 0),
+                      color: const Color.fromARGB(28, 0, 0, 0),
                       blurRadius: 40,
                       spreadRadius: 2,
                     ),
@@ -347,7 +346,7 @@ class _CompositorSettingsPageState extends State<CompositorSettingsPage> {
             ),
           ),
         ],
-      ),
+      
     );
   }
 

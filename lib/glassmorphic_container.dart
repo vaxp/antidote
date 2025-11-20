@@ -19,7 +19,7 @@ class GlassmorphicContainer extends StatelessWidget {
     this.height,
     this.borderRadius = 20,
     required this.linearGradient,
-    this.border = 1.2,
+    this.border = 0,
     this.blur = 26,
     required this.borderGradient,
     this.child,
@@ -52,11 +52,11 @@ class GlassmorphicContainer extends StatelessWidget {
             alignment: alignment,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(borderRadius),
-              gradient: linearGradient,
+              // gradient: linearGradient,
               border: border > 0
                   ? Border.all(
                       width: border,
-                      color: const Color.fromARGB(200, 0, 0, 0),
+                      color: const Color.fromARGB(0, 0, 0, 0),
                     )
                   : null,
             ),

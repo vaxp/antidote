@@ -1416,7 +1416,7 @@ class _DisplaySettingsPageState extends State<DisplaySettingsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color.fromARGB(64, 0, 0, 0),
+      backgroundColor: Colors.transparent,
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(32),
         child: Column(
@@ -1505,8 +1505,8 @@ class _DisplaySettingsPageState extends State<DisplaySettingsPage> {
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
         colors: [
-          const Color.fromARGB(30, 150, 200, 255).withOpacity(0.12),
-          const Color.fromARGB(20, 120, 170, 240).withOpacity(0.08),
+          const Color.fromARGB(30, 17, 17, 17).withOpacity(0.12),
+          const Color.fromARGB(30, 17, 17, 17).withOpacity(0.08),
         ],
       ),
       border: 1.2,
@@ -1641,8 +1641,8 @@ class _DisplaySettingsPageState extends State<DisplaySettingsPage> {
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
         colors: [
-          const Color.fromARGB(30, 150, 200, 255).withOpacity(0.12),
-          const Color.fromARGB(20, 120, 170, 240).withOpacity(0.08),
+          const Color.fromARGB(30, 17, 17, 17).withOpacity(0.12),
+          const Color.fromARGB(30, 17, 17, 17).withOpacity(0.08),
         ],
       ),
       border: 1.2,
@@ -1714,8 +1714,8 @@ class _DisplaySettingsPageState extends State<DisplaySettingsPage> {
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
         colors: [
-          const Color.fromARGB(30, 150, 200, 255).withOpacity(0.12),
-          const Color.fromARGB(20, 120, 170, 240).withOpacity(0.08),
+          const Color.fromARGB(30, 17, 17, 17).withOpacity(0.12),
+          const Color.fromARGB(30, 17, 17, 17).withOpacity(0.08),
         ],
       ),
       border: 1.2,
@@ -1800,8 +1800,8 @@ class _DisplaySettingsPageState extends State<DisplaySettingsPage> {
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
         colors: [
-          const Color.fromARGB(30, 150, 200, 255).withOpacity(0.12),
-          const Color.fromARGB(20, 120, 170, 240).withOpacity(0.08),
+          const Color.fromARGB(30, 17, 17, 17).withOpacity(0.12),
+          const Color.fromARGB(30, 17, 17, 17).withOpacity(0.08),
         ],
       ),
       border: 1.2,
@@ -1872,8 +1872,8 @@ class _DisplaySettingsPageState extends State<DisplaySettingsPage> {
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
         colors: [
-          const Color.fromARGB(30, 150, 200, 255).withOpacity(0.12),
-          const Color.fromARGB(20, 120, 170, 240).withOpacity(0.08),
+          const Color.fromARGB(30, 17, 17, 17).withOpacity(0.12),
+          const Color.fromARGB(30, 17, 17, 17).withOpacity(0.08),
         ],
       ),
       border: 1.2,
@@ -1923,8 +1923,8 @@ class _DisplaySettingsPageState extends State<DisplaySettingsPage> {
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
         colors: [
-          const Color.fromARGB(30, 150, 200, 255).withOpacity(0.12),
-          const Color.fromARGB(20, 120, 170, 240).withOpacity(0.08),
+          const Color.fromARGB(30, 17, 17, 17).withOpacity(0.12),
+          const Color.fromARGB(30, 17, 17, 17).withOpacity(0.08),
         ],
       ),
       border: 1.2,
@@ -1983,8 +1983,8 @@ class _DisplaySettingsPageState extends State<DisplaySettingsPage> {
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
         colors: [
-          const Color.fromARGB(30, 150, 200, 255).withOpacity(0.12),
-          const Color.fromARGB(20, 120, 170, 240).withOpacity(0.08),
+          const Color.fromARGB(30, 17, 17, 17).withOpacity(0.12),
+          const Color.fromARGB(30, 17, 17, 17).withOpacity(0.08),
         ],
       ),
       border: 1.2,

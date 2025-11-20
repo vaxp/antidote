@@ -28,7 +28,7 @@ class _SystemSettingsPageState extends State<SystemSettingsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color.fromARGB(64, 0, 0, 0),
+      backgroundColor: Colors.transparent,
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(32),
         child: Column(
