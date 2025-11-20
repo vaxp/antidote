@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 
-// زر ماك عادي (إغلاق أو تصغير)
-class MacButton extends StatelessWidget {
+class VaxpButton extends StatelessWidget {
   final Color color;
   final VoidCallback onPressed;
 
-  const MacButton({super.key, required this.color, required this.onPressed});
+  const VaxpButton({super.key, required this.color, required this.onPressed});
 
   @override
   Widget build(BuildContext context) {
@@ -24,17 +23,17 @@ class MacButton extends StatelessWidget {
 }
 
 // زر ماك مع تأثير hover (لزر التكبير/إلغاء التكبير)
-class HoverMacButton extends StatefulWidget {
+class HoverVaxpButton extends StatefulWidget {
   final Color color;
   final VoidCallback onPressed;
 
-  const HoverMacButton({super.key, required this.color, required this.onPressed});
+  const HoverVaxpButton({super.key, required this.color, required this.onPressed});
 
   @override
-  State<HoverMacButton> createState() => _HoverMacButtonState();
+  State<HoverVaxpButton> createState() => _HoverVaxpButtonState();
 }
 
-class _HoverMacButtonState extends State<HoverMacButton> {
+class _HoverVaxpButtonState extends State<HoverVaxpButton> {
   bool _hovering = false;
 
   @override
