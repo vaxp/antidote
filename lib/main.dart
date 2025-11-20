@@ -67,7 +67,7 @@ class _SettingsHomePageState extends State<SettingsHomePage> {
   final List<Widget> _pages = const [
     WiFiSettingsPage(),
     BluetoothSettingsPage(),
-     VenomSettingsApp(),
+     CompositorSettingsPage(),
      DisplaySettingsPage(),
     AudioSettingsPage(),
     MouseSettingsPage(),

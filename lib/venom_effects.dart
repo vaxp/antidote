@@ -2,41 +2,6 @@ import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
 
-class VenomSettingsApp extends StatelessWidget {
-  const VenomSettingsApp({Key? key}) : super(key: key);
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'Venom DE Settings',
-      theme: ThemeData.dark().copyWith(
-        scaffoldBackgroundColor: Colors.transparent,
-        primaryColor: const Color(0xFFBB9AF7),
-        sliderTheme: SliderThemeData(
-          activeTrackColor: const Color(0xFFBB9AF7),
-          inactiveTrackColor: const Color(0xFFBB9AF7).withOpacity(0.2),
-          thumbColor: const Color(0xFFBB9AF7),
-          overlayColor: const Color(0xFFBB9AF7).withOpacity(0.2),
-          trackHeight: 4.0,
-          thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 8.0),
-        ),
-        switchTheme: SwitchThemeData(
-          thumbColor: MaterialStateProperty.resolveWith((states) =>
-              states.contains(MaterialState.selected)
-                  ? const Color(0xFFBB9AF7)
-                  : Colors.grey.shade600),
-          trackColor: MaterialStateProperty.resolveWith((states) =>
-              states.contains(MaterialState.selected)
-                  ? const Color(0xFFBB9AF7).withOpacity(0.5)
-                  : Colors.white.withOpacity(0.1)),
-        ),
-      ),
-      home: const CompositorSettingsPage(),
-    );
-  }
-}
-
-
 class CompositorSettingsPage extends StatefulWidget {
   const CompositorSettingsPage({Key? key}) : super(key: key);
 
@@ -217,131 +182,129 @@ class _CompositorSettingsPageState extends State<CompositorSettingsPage> {
         children: [
           Container(color: const Color.fromARGB(0, 0, 0, 0),),
           Center(
-            child: Expanded(
-              child: Container(
-                // width: 550,
-                // height: 750, // زيادة الارتفاع لاستيعاب الأنيميشن
-                decoration: BoxDecoration(
-                  color: const Color.fromARGB(0, 0, 0, 0), 
-                  // borderRadius: BorderRadius.circular(25),
-                  // border: Border.all(color: const Color.fromARGB(255, 7, 7, 7).withOpacity(0.6), width: 1.5),
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color.fromARGB(28, 0, 0, 0),
-                      blurRadius: 40,
-                      spreadRadius: 2,
+            child: Container(
+              // width: 550,
+              // height: 750, // زيادة الارتفاع لاستيعاب الأنيميشن
+              decoration: BoxDecoration(
+                color: const Color.fromARGB(0, 0, 0, 0), 
+                // borderRadius: BorderRadius.circular(25),
+                // border: Border.all(color: const Color.fromARGB(255, 7, 7, 7).withOpacity(0.6), width: 1.5),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color.fromARGB(28, 0, 0, 0),
+                    blurRadius: 40,
+                    spreadRadius: 2,
+                  ),
+                ],
+              ),
+              child: Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(30, 25, 30, 10),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text("Venom Effects", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white, letterSpacing: 1)),
+                        IconButton(
+                          icon: const Icon(Icons.restart_alt_rounded, color: Color(0xFFBB9AF7), size: 28),
+                          onPressed: _resetToDefaults,
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-                child: Column(
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(30, 25, 30, 10),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text("Venom Effects", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white, letterSpacing: 1)),
-                          IconButton(
-                            icon: const Icon(Icons.restart_alt_rounded, color: Color(0xFFBB9AF7), size: 28),
-                            onPressed: _resetToDefaults,
-                          ),
-                        ],
-                      ),
+                  ),
+                  const Divider(color: Colors.white10, indent: 30, endIndent: 30),
+                  
+                  Expanded(
+                    child: ListView(
+                      padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 10),
+                      children: [
+                        
+                        // === SHADOWS ===
+                        _buildSectionContainer(
+                          context,
+                          "Shadows", Icons.layers_outlined,
+                          [
+                            _buildSwitch("Enable Shadows", _shadowEnabled, (v) {
+                              setState(() => _shadowEnabled = v);
+                              _updateConfig();
+                            }),
+                            _buildSlider("Radius", _shadowRadius, 0, 100, (v) {
+                              setState(() => _shadowRadius = v);
+                              _updateConfig();
+                            }, enabled: _shadowEnabled),
+                            _buildSlider("Opacity", _shadowOpacity, 0.0, 1.0, (v) {
+                              setState(() => _shadowOpacity = v);
+                              _updateConfig();
+                            }, enabled: _shadowEnabled),
+                             const SizedBox(height: 10),
+                             // Color Sliders (Compact)
+                            Row(
+                              children: [
+                                Expanded(child: _buildColorSlider(_shadowRed, Colors.redAccent, (v) { setState(() => _shadowRed = v); _updateConfig(); }, _shadowEnabled)),
+                                const SizedBox(width: 8),
+                                Expanded(child: _buildColorSlider(_shadowGreen, Colors.greenAccent, (v) { setState(() => _shadowGreen = v); _updateConfig(); }, _shadowEnabled)),
+                                const SizedBox(width: 8),
+                                Expanded(child: _buildColorSlider(_shadowBlue, Colors.blueAccent, (v) { setState(() => _shadowBlue = v); _updateConfig(); }, _shadowEnabled)),
+                              ],
+                            ),
+                          ],
+                        ),
+            
+                        const SizedBox(height: 20),
+            
+                        // === BLUR ===
+                        _buildSectionContainer(
+                          context,
+                          "Blur (Glass)", Icons.blur_on,
+                          [
+                            _buildSwitch("Enable Blur", _blurEnabled, (v) {
+                              setState(() => _blurEnabled = v);
+                              _updateConfig();
+                            }),
+                            _buildSlider("Blur Strength", _blurStrength, 0, 20, (v) {
+                              setState(() => _blurStrength = v);
+                              _updateConfig();
+                            }, enabled: _blurEnabled),
+                          ],
+                        ),
+            
+                        const SizedBox(height: 20),
+            
+                        // === NEW: ANIMATIONS ===
+                        _buildSectionContainer(
+                          context,
+                          "Animations", Icons.animation,
+                          [
+                            _buildSwitch("Enable Fading", _fadingEnabled, (v) {
+                              setState(() => _fadingEnabled = v);
+                              _updateConfig();
+                            }),
+                            // كلما زادت القيمة زادت سرعة الأنيميشن
+                            _buildSlider("Animation Speed", _fadeSpeed, 10, 100, (v) {
+                              setState(() => _fadeSpeed = v);
+                              _updateConfig();
+                            }, enabled: _fadingEnabled),
+                          ],
+                        ),
+            
+                        const SizedBox(height: 20),
+            
+                        // === GEOMETRY ===
+                        _buildSectionContainer(
+                          context,
+                          "Geometry", Icons.rounded_corner,
+                          [
+                            _buildSlider("Corner Radius", _cornerRadius, 0, 30, (v) {
+                              setState(() => _cornerRadius = v);
+                              _updateConfig();
+                            }),
+                          ],
+                        ),
+                        const SizedBox(height: 20),
+                      ],
                     ),
-                    const Divider(color: Colors.white10, indent: 30, endIndent: 30),
-                    
-                    Expanded(
-                      child: ListView(
-                        padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 10),
-                        children: [
-                          
-                          // === SHADOWS ===
-                          _buildSectionContainer(
-                            context,
-                            "Shadows", Icons.layers_outlined,
-                            [
-                              _buildSwitch("Enable Shadows", _shadowEnabled, (v) {
-                                setState(() => _shadowEnabled = v);
-                                _updateConfig();
-                              }),
-                              _buildSlider("Radius", _shadowRadius, 0, 100, (v) {
-                                setState(() => _shadowRadius = v);
-                                _updateConfig();
-                              }, enabled: _shadowEnabled),
-                              _buildSlider("Opacity", _shadowOpacity, 0.0, 1.0, (v) {
-                                setState(() => _shadowOpacity = v);
-                                _updateConfig();
-                              }, enabled: _shadowEnabled),
-                               const SizedBox(height: 10),
-                               // Color Sliders (Compact)
-                              Row(
-                                children: [
-                                  Expanded(child: _buildColorSlider(_shadowRed, Colors.redAccent, (v) { setState(() => _shadowRed = v); _updateConfig(); }, _shadowEnabled)),
-                                  const SizedBox(width: 8),
-                                  Expanded(child: _buildColorSlider(_shadowGreen, Colors.greenAccent, (v) { setState(() => _shadowGreen = v); _updateConfig(); }, _shadowEnabled)),
-                                  const SizedBox(width: 8),
-                                  Expanded(child: _buildColorSlider(_shadowBlue, Colors.blueAccent, (v) { setState(() => _shadowBlue = v); _updateConfig(); }, _shadowEnabled)),
-                                ],
-                              ),
-                            ],
-                          ),
-              
-                          const SizedBox(height: 20),
-              
-                          // === BLUR ===
-                          _buildSectionContainer(
-                            context,
-                            "Blur (Glass)", Icons.blur_on,
-                            [
-                              _buildSwitch("Enable Blur", _blurEnabled, (v) {
-                                setState(() => _blurEnabled = v);
-                                _updateConfig();
-                              }),
-                              _buildSlider("Blur Strength", _blurStrength, 0, 20, (v) {
-                                setState(() => _blurStrength = v);
-                                _updateConfig();
-                              }, enabled: _blurEnabled),
-                            ],
-                          ),
-              
-                          const SizedBox(height: 20),
-              
-                          // === NEW: ANIMATIONS ===
-                          _buildSectionContainer(
-                            context,
-                            "Animations", Icons.animation,
-                            [
-                              _buildSwitch("Enable Fading", _fadingEnabled, (v) {
-                                setState(() => _fadingEnabled = v);
-                                _updateConfig();
-                              }),
-                              // كلما زادت القيمة زادت سرعة الأنيميشن
-                              _buildSlider("Animation Speed", _fadeSpeed, 10, 100, (v) {
-                                setState(() => _fadeSpeed = v);
-                                _updateConfig();
-                              }, enabled: _fadingEnabled),
-                            ],
-                          ),
-              
-                          const SizedBox(height: 20),
-              
-                          // === GEOMETRY ===
-                          _buildSectionContainer(
-                            context,
-                            "Geometry", Icons.rounded_corner,
-                            [
-                              _buildSlider("Corner Radius", _cornerRadius, 0, 30, (v) {
-                                setState(() => _cornerRadius = v);
-                                _updateConfig();
-                              }),
-                            ],
-                          ),
-                          const SizedBox(height: 20),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
           ),
