@@ -36,6 +36,7 @@ class _AppsSettingsPageState extends State<AppsSettingsPage> {
   ];
 
   Color _currentColor = Colors.blue;
+  Color _currentTextColor = Colors.white;
   double _opacity = 1.0;
 
   @override
@@ -174,7 +175,7 @@ class _AppsSettingsPageState extends State<AppsSettingsPage> {
             const SizedBox(height: 16),
             GlassmorphicContainer(
               width: double.infinity,
-              height: 120,
+              height: 300, // Adjusted height
               borderRadius: 16,
               blur: 10,
               border: 1,
@@ -199,39 +200,43 @@ class _AppsSettingsPageState extends State<AppsSettingsPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // 1. Preset Colors Grid
                     const Text(
                       'Text Color Presets',
-                      style: TextStyle(color: Colors.white70, fontSize: 16),
+                      style: TextStyle(color: Colors.white70, fontSize: 14),
                     ),
+                    const SizedBox(height: 10),
+                    Wrap(
+                      spacing: 10,
+                      runSpacing: 10,
+                      children: _presetColors
+                          .map((color) => _buildTextColorOption(color))
+                          .toList(),
+                    ),
+
+                    const SizedBox(height: 24),
+                    const Divider(color: Colors.white24),
                     const SizedBox(height: 16),
+
+                    // 2. Custom Color Picker Button
                     Row(
                       children: [
-                        _buildSimpleColorButton(
-                          'White',
-                          '#FFFFFF',
-                          Colors.white,
-                          'system.text_color',
+                        const Text(
+                          'Custom Text Color:',
+                          style: TextStyle(color: Colors.white70, fontSize: 16),
                         ),
                         const SizedBox(width: 16),
-                        _buildSimpleColorButton(
-                          'Black',
-                          '#000000',
-                          Colors.black,
-                          'system.text_color',
-                        ),
-                        const SizedBox(width: 16),
-                        _buildSimpleColorButton(
-                          'Blue',
-                          '#448AFF',
-                          Colors.blueAccent,
-                          'system.text_color',
-                        ),
-                        const SizedBox(width: 16),
-                        _buildSimpleColorButton(
-                          'Red',
-                          '#FF5252',
-                          Colors.redAccent,
-                          'system.text_color',
+                        ElevatedButton.icon(
+                          icon: const Icon(Icons.color_lens),
+                          label: const Text("Pick Custom Color"),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: _currentTextColor,
+                            foregroundColor:
+                                _currentTextColor.computeLuminance() > 0.5
+                                ? Colors.black
+                                : Colors.white,
+                          ),
+                          onPressed: () => _showTextColorPicker(context),
                         ),
                       ],
                     ),
@@ -289,22 +294,54 @@ class _AppsSettingsPageState extends State<AppsSettingsPage> {
     );
   }
 
+  Widget _buildTextColorOption(Color color) {
+    return InkWell(
+      onTap: () {
+        setState(() {
+          _currentTextColor = color;
+          _updateTextConfig(color);
+        });
+      },
+      borderRadius: BorderRadius.circular(20),
+      child: Container(
+        width: 36,
+        height: 36,
+        decoration: BoxDecoration(
+          color: color,
+          shape: BoxShape.circle,
+          border: Border.all(
+            color: _currentTextColor.value == color.value
+                ? Colors.white
+                : Colors.transparent,
+            width: 3,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.2),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   void _showColorPicker(BuildContext context) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('Pick a color'),
+          title: const Text('Pick Background Color'),
           content: SingleChildScrollView(
             child: ColorPicker(
               pickerColor: _currentColor,
               onColorChanged: (color) {
                 setState(() {
                   _currentColor = color;
-                  // Don't update config immediately while dragging, wait for selection
                 });
               },
-              enableAlpha: false, // We handle alpha separately with slider
+              enableAlpha: false,
               displayThumbColor: true,
               paletteType: PaletteType.hsvWithHue,
             ),
@@ -323,48 +360,48 @@ class _AppsSettingsPageState extends State<AppsSettingsPage> {
     );
   }
 
-  Future<void> _updateConfig(Color color) async {
-    // Convert Color to Hex String (#AARRGGBB)
-    // We use value.toRadixString(16) and padLeft to ensure full 8 chars including alpha
-    String hex =
-        '#${color.value.toRadixString(16).padLeft(8, '0').toUpperCase()}';
-
-    // Save to Venom Config
-    await VenomConfig().set('system.background_color', hex);
-    print("Saved Color: $hex");
+  void _showTextColorPicker(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Pick Text Color'),
+          content: SingleChildScrollView(
+            child: ColorPicker(
+              pickerColor: _currentTextColor,
+              onColorChanged: (color) {
+                setState(() {
+                  _currentTextColor = color;
+                });
+              },
+              enableAlpha: false,
+              displayThumbColor: true,
+              paletteType: PaletteType.hsvWithHue,
+            ),
+          ),
+          actions: <Widget>[
+            ElevatedButton(
+              child: const Text('Got it'),
+              onPressed: () {
+                _updateTextConfig(_currentTextColor);
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 
-  Widget _buildSimpleColorButton(
-    String label,
-    String hex,
-    Color color,
-    String key,
-  ) {
-    return InkWell(
-      onTap: () => VenomConfig().set(key, hex),
-      borderRadius: BorderRadius.circular(20),
-      child: Container(
-        padding: const EdgeInsets.all(4),
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          border: Border.all(color: Colors.white24, width: 1),
-        ),
-        child: Container(
-          width: 32,
-          height: 32,
-          decoration: BoxDecoration(
-            color: color,
-            shape: BoxShape.circle,
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.2),
-                blurRadius: 4,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
+  Future<void> _updateConfig(Color color) async {
+    String hex =
+        '#${color.value.toRadixString(16).padLeft(8, '0').toUpperCase()}';
+    await VenomConfig().set('system.background_color', hex);
+  }
+
+  Future<void> _updateTextConfig(Color color) async {
+    String hex =
+        '#${color.value.toRadixString(16).padLeft(8, '0').toUpperCase()}';
+    await VenomConfig().set('system.text_color', hex);
   }
 }
