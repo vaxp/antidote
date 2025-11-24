@@ -9,12 +9,12 @@ class VenomScaffold extends StatefulWidget {
   final String title;
 
   const VenomScaffold({
-    Key? key,
+    super.key,
     required this.body,
     this.title = "Settings",
     required Appbar appBar,
     required Color backgroundColor,
-  }) : super(key: key);
+  });
 
   @override
   State<VenomScaffold> createState() => _VenomScaffoldState();
@@ -89,11 +89,11 @@ class VenomAppbar extends StatelessWidget {
   final VoidCallback onHoverExit;
 
   const VenomAppbar({
-    Key? key,
+    super.key,
     required this.title,
     required this.onHoverEnter,
     required this.onHoverExit,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

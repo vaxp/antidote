@@ -47,13 +47,31 @@ class _AppsSettingsPageState extends State<AppsSettingsPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Applications Control',
-              style: TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
+            Row(
+              children: [
+                const Text(
+                  'Applications Control',
+                  style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+                const Spacer(),
+                ElevatedButton.icon(
+                  onPressed: _resetToDefaults,
+                  icon: const Icon(Icons.restore, color: Colors.white),
+                  label: const Text("Reset to Default"),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.redAccent.withOpacity(0.8),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 32),
 
@@ -403,5 +421,20 @@ class _AppsSettingsPageState extends State<AppsSettingsPage> {
     String hex =
         '#${color.value.toRadixString(16).padLeft(8, '0').toUpperCase()}';
     await VenomConfig().set('system.text_color', hex);
+  }
+
+  void _resetToDefaults() {
+    setState(() {
+      // Default Background: Color.fromARGB(100, 0, 0, 0)
+      _currentColor = const Color.fromARGB(100, 0, 0, 0);
+      _opacity = 1.0; // Reset opacity to full (since alpha is in color)
+
+      // Default Text: White
+      _currentTextColor = Colors.white;
+
+      // Update Config
+      _updateConfig(_currentColor);
+      _updateTextConfig(_currentTextColor);
+    });
   }
 }
