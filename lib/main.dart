@@ -9,7 +9,7 @@ import 'package:antidote/power_settings_page.dart';
 import 'package:antidote/audio_settings_page.dart';
 import 'package:antidote/mouse_settings_page.dart';
 import 'package:antidote/keyboard_settings_page.dart';
-import 'package:antidote/apps_settings_page.dart'; // Import new page
+import 'package:antidote/apps_settings_page.dart'; 
 import 'package:antidote/system_settings_page.dart';
 import 'package:antidote/glassmorphic_container.dart';
 import 'package:window_manager/window_manager.dart';
