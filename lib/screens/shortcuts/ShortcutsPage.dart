@@ -59,8 +59,6 @@ class ShortcutManager {
   }
 
   Future<void> _restartDaemon() async {
-    print(">> [Manager] Restarting Venom Daemon...");
-
     try {
       // أ. قتل العفريت القديم فوراً
       await Process.run('pkill', ['-9', 'venom_daemon']);
@@ -70,7 +68,6 @@ class ShortcutManager {
 
       // ج. التحقق من وجود الملف التنفيذي
       if (!await File(_daemonPath).exists()) {
-        print(">> [Error] Daemon executable not found at: $_daemonPath");
         return;
       }
 
@@ -80,10 +77,8 @@ class ShortcutManager {
         [], 
         mode: ProcessStartMode.detached,
       );
-
-      print(">> [Manager] Daemon Respawned Successfully.");
     } catch (e) {
-      print(">> [Error] Failed to restart daemon: $e");
+      // Daemon restart failed silently
     }
   }
 }
