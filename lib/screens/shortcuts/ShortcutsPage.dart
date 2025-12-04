@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 
 class ShortcutItem {
   String modifier;
@@ -246,7 +247,7 @@ class _ShortcutsPageState extends State<ShortcutsPage> {
         ],
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? const Center(child: CupertinoActivityIndicator())
           : _shortcuts.isEmpty
               ? Center(
                   child: Column(

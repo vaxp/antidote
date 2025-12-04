@@ -1,6 +1,7 @@
 import 'dart:async' ;
 import 'package:dbus/dbus.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 
 class BluetoothManagerDialog extends StatefulWidget {
   const BluetoothManagerDialog({super.key});
@@ -347,8 +348,7 @@ class _BluetoothManagerDialogState extends State<BluetoothManagerDialog> {
                       ? const SizedBox(
                           width: 20,
                           height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2.5,
+                          child: CupertinoActivityIndicator(
                             color: Colors.blueAccent,
                           ),
                         )
@@ -364,7 +364,7 @@ class _BluetoothManagerDialogState extends State<BluetoothManagerDialog> {
             Expanded(
               child: _isInitializing
                   ? const Center(
-                      child: CircularProgressIndicator(
+                      child: CupertinoActivityIndicator(
                         color: Colors.blueAccent,
                       ),
                     )

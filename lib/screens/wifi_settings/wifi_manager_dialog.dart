@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:dbus/dbus.dart';
 import 'package:uuid/uuid.dart';
 
@@ -579,9 +580,8 @@ class _WiFiManagerDialogState extends State<WiFiManagerDialog> {
                   const SizedBox(
                     width: 20,
                     height: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation(Colors.tealAccent),
+                    child: CupertinoActivityIndicator(
+                      color: Colors.tealAccent,
                     ),
                   )
                 else
@@ -627,8 +627,8 @@ class _WiFiManagerDialogState extends State<WiFiManagerDialog> {
               const Center(
                 child: Padding(
                   padding: EdgeInsets.all(24),
-                  child: CircularProgressIndicator(
-                    valueColor: AlwaysStoppedAnimation(Colors.tealAccent),
+                  child: CupertinoActivityIndicator(
+                    color: Colors.tealAccent,
                   ),
                 ),
               )
@@ -730,11 +730,8 @@ class _WiFiManagerDialogState extends State<WiFiManagerDialog> {
                           ? const SizedBox(
                               width: 16,
                               height: 16,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation(
-                                  Colors.tealAccent,
-                                ),
+                              child: CupertinoActivityIndicator(
+                                color: Colors.tealAccent,
                               ),
                             )
                           : network.isSaved

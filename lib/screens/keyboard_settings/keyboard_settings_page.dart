@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:antidote/screens/shortcuts/ShortcutsPage.dart';
 import 'package:antidote/features/keyboard_settings/keyboard_settings.dart';
@@ -92,7 +93,7 @@ class _InputSourcesSection extends StatelessWidget {
             if (state.status == KeyboardSettingsStatus.loading)
               const Padding(
                 padding: EdgeInsets.all(16),
-                child: Center(child: CircularProgressIndicator()),
+                child: Center(child: CupertinoActivityIndicator()),
               )
             else if (state.currentSources.isEmpty)
               Padding(

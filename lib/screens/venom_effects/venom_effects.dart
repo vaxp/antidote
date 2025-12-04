@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 
 class CompositorSettingsPage extends StatefulWidget {
   const CompositorSettingsPage({Key? key}) : super(key: key);
@@ -176,7 +177,7 @@ class _CompositorSettingsPageState extends State<CompositorSettingsPage> {
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoading) return const Center(child: CircularProgressIndicator());
+    if (_isLoading) return const Center(child: CupertinoActivityIndicator());
 
     return Stack(
         children: [

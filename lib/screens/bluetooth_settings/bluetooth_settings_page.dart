@@ -1,5 +1,6 @@
 import 'package:antidote/core/glassmorphic_container.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:antidote/features/bluetooth_settings/bluetooth_settings.dart';
 
@@ -167,9 +168,8 @@ class _DevicesHeader extends StatelessWidget {
               const SizedBox(
                 width: 20,
                 height: 20,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation(Colors.blueAccent),
+                child: CupertinoActivityIndicator(
+                  color: Colors.blueAccent,
                 ),
               )
             else
@@ -216,7 +216,7 @@ class _DevicesList extends StatelessWidget {
       builder: (context, state) {
         if (state.status == BluetoothSettingsStatus.initializing) {
           return const Center(
-            child: CircularProgressIndicator(color: Colors.blueAccent),
+            child: CupertinoActivityIndicator(color: Colors.blueAccent),
           );
         }
 

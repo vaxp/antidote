@@ -1,5 +1,6 @@
 import 'package:antidote/core/glassmorphic_container.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:antidote/features/wifi_settings/wifi_settings.dart';
 
@@ -209,11 +210,8 @@ class _NetworksHeader extends StatelessWidget {
               const SizedBox(
                 width: 20,
                 height: 20,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation(
-                    Color.fromARGB(255, 100, 200, 255),
-                  ),
+                child: CupertinoActivityIndicator(
+                  color: Color.fromARGB(255, 100, 200, 255),
                 ),
               )
             else
@@ -288,8 +286,8 @@ class _NetworksList extends StatelessWidget {
 
         if (state.status == WiFiSettingsStatus.loading) {
           return const Center(
-            child: CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation(Colors.tealAccent),
+            child: CupertinoActivityIndicator(
+              color: Colors.tealAccent,
             ),
           );
         }
@@ -471,9 +469,8 @@ class _NetworkTile extends StatelessWidget {
             const SizedBox(
               width: 24,
               height: 24,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                valueColor: AlwaysStoppedAnimation(Colors.tealAccent),
+              child: CupertinoActivityIndicator(
+                color: Colors.tealAccent,
               ),
             )
           else if (network.isConnected)
