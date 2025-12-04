@@ -15,10 +15,9 @@ class ShortcutItem {
 // --- Logic Manager ---
 class ShortcutManager {
   // مسارات الملفات (تأكد أن مسار العفريت صحيح حسب مكان تجميعه)
-  final String _csvPath = '${Platform.environment['HOME']}/Desktop/venom_shortcuts.csv';
+  final String _csvPath = '/etc/venom/shortcuts.csv';
 
-  final String _daemonPath = '${Platform.environment['HOME']}/Desktop/000000/venom_daemon';
-
+  final String _daemonPath = '/usr/bin/venom_shortcuts';
   Future<List<ShortcutItem>> loadShortcuts() async {
     final file = File(_csvPath);
     if (!await file.exists()) {
@@ -61,7 +60,7 @@ class ShortcutManager {
   Future<void> _restartDaemon() async {
     try {
       // أ. قتل العفريت القديم فوراً
-      await Process.run('pkill', ['-9', 'venom_daemon']);
+      await Process.run('pkill', ['-9', 'venom_shortcuts']);
       
       // ب. استراحة إجبارية (300ms) ليقوم X11 بتحرير الأزرار
       await Future.delayed(const Duration(milliseconds: 300));
