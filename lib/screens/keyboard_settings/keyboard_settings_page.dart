@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:antidote/screens/ShortcutsPage.dart';
+import 'package:antidote/screens/shortcuts/ShortcutsPage.dart';
 import 'package:antidote/features/keyboard_settings/keyboard_settings.dart';
 
 /// Keyboard Settings Page using BLoC pattern
