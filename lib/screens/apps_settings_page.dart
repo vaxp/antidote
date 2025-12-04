@@ -1,5 +1,5 @@
+import 'package:antidote/core/glassmorphic_container.dart';
 import 'package:flutter/material.dart';
-import 'package:antidote/glassmorphic_container.dart';
 import 'package:venom_config/venom_config.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 

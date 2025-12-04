@@ -1,6 +1,6 @@
+import 'package:antidote/core/glassmorphic_container.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:antidote/glassmorphic_container.dart';
 import 'package:antidote/features/wifi_settings/wifi_settings.dart';
 
 /// WiFi Settings Page using BLoC pattern

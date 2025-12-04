@@ -1,6 +1,6 @@
+import 'package:antidote/core/glassmorphic_container.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:antidote/glassmorphic_container.dart';
 import 'package:antidote/features/display_settings/display_settings.dart';
 
 /// Display Settings Page using BLoC pattern
