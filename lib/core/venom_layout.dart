@@ -1,11 +1,10 @@
 import 'dart:ui'; // مهم للـ ImageFilter
-import 'package:antidote/appbar.dart';
+import 'package:antidote/core/appbar.dart';
 import 'package:flutter/material.dart';
 import 'package:window_manager/window_manager.dart';
 
-// 1. هذا هو الـ Layout الرئيسي الذي ستستخدمه في تطبيقك
 class VenomScaffold extends StatefulWidget {
-  final Widget body; // محتوى الصفحة (الإعدادات)
+  final Widget body;
   final String title;
 
   const VenomScaffold({
@@ -21,7 +20,6 @@ class VenomScaffold extends StatefulWidget {
 }
 
 class _VenomScaffoldState extends State<VenomScaffold> {
-  // متغير الحالة للتحكم في الضبابية
   bool _isCinematicBlurActive = false;
 
   void _setBlur(bool active) {
@@ -35,20 +33,16 @@ class _VenomScaffoldState extends State<VenomScaffold> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.transparent, // مهم لشفافية النافذة
+      backgroundColor: Colors.transparent,
       body: Stack(
         children: [
-          // --- الطبقة 1: محتوى التطبيق ---
-          // نستخدم TweenAnimationBuilder لتحريك قيمة الـ Blur بنعومة
           TweenAnimationBuilder<double>(
             tween: Tween<double>(
               begin: 0.0,
-              end: _isCinematicBlurActive
-                  ? 10.0
-                  : 0.0, // قوة البلور (10 قوية وجميلة)
+              end: _isCinematicBlurActive ? 10.0 : 0.0,
             ),
-            duration: const Duration(milliseconds: 300), // سرعة الأنيميشن
-            curve: Curves.easeOutCubic, // منحنى حركة ناعم
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeOutCubic,
             builder: (context, blurValue, child) {
               return ImageFiltered(
                 imageFilter: ImageFilter.blur(
@@ -59,19 +53,16 @@ class _VenomScaffoldState extends State<VenomScaffold> {
               );
             },
             child: Container(
-              margin: const EdgeInsets.only(top: 40), // نترك مساحة للـ Appbar
+              margin: const EdgeInsets.only(top: 40),
               child: widget.body,
             ),
           ),
-
-          // --- الطبقة 2: شريط العنوان (فوق الكل) ---
           Positioned(
             top: 0,
             left: 0,
             right: 0,
             child: VenomAppbar(
               title: widget.title,
-              // تمرير دالة للتحكم في البلور عند لمس الأزرار
               onHoverEnter: () => _setBlur(true),
               onHoverExit: () => _setBlur(false),
             ),
@@ -82,7 +73,6 @@ class _VenomScaffoldState extends State<VenomScaffold> {
   }
 }
 
-// 2. شريط العنوان المعدل (يرسل إشارات الهوفر)
 class VenomAppbar extends StatelessWidget {
   final String title;
   final VoidCallback onHoverEnter;
@@ -105,7 +95,6 @@ class VenomAppbar extends StatelessWidget {
       child: Container(
         height: 40,
         alignment: Alignment.centerRight,
-        // خلفية نصف شفافة للشريط نفسه
         color: const Color.fromARGB(100, 0, 0, 0),
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
         child: Row(
@@ -124,9 +113,6 @@ class VenomAppbar extends StatelessWidget {
             ),
             const Spacer(),
 
-            // مجموعة الأزرار
-            // نستخدم MouseRegion واحد كبير حول الأزرار الثلاثة
-            // لضمان استمرار البلور عند التنقل بين زر وآخر
             MouseRegion(
               onEnter: (_) => onHoverEnter(),
               onExit: (_) => onHoverExit(),
@@ -168,7 +154,6 @@ class VenomAppbar extends StatelessWidget {
   }
 }
 
-// 3. زر النافذة (نفس الذي صممناه سابقاً مع تحسينات طفيفة)
 class VenomWindowButton extends StatefulWidget {
   final Color color;
   final IconData icon;
@@ -208,7 +193,7 @@ class _VenomWindowButtonState extends State<VenomWindowButton> {
                 ? [
                     BoxShadow(
                       color: widget.color.withOpacity(0.8),
-                      blurRadius: 10, // زيادة التوهج قليلاً
+                      blurRadius: 10,
                       spreadRadius: 2,
                     ),
                   ]

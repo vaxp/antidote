@@ -1,442 +1,23 @@
-import 'dart:async';
-import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:antidote/features/audio_settings/audio_settings.dart';
 
-class AudioDevice {
-  final String name;
-  final String description;
-  final bool isInput;
-  final bool isDefault;
-
-  AudioDevice({
-    required this.name,
-    required this.description,
-    required this.isInput,
-    this.isDefault = false,
-  });
-
-  @override
-  String toString() => description;
-
-  @override
-  bool operator ==(Object other) {
-    if (identical(this, other)) return true;
-    return other is AudioDevice &&
-        other.name == name &&
-        other.isInput == isInput;
-  }
-
-  @override
-  int get hashCode => name.hashCode ^ isInput.hashCode;
-}
-
-class AudioSettingsPage extends StatefulWidget {
+/// Audio Settings Page using BLoC pattern
+class AudioSettingsPage extends StatelessWidget {
   const AudioSettingsPage({super.key});
 
   @override
-  State<AudioSettingsPage> createState() => _AudioSettingsPageState();
-}
-
-class _AudioSettingsPageState extends State<AudioSettingsPage> {
-  Timer? _updateTimer;
-
-  // Output settings
-  List<AudioDevice> _outputDevices = [];
-  AudioDevice? _selectedOutputDevice;
-  double _outputVolume = 75.0;
-  double _balance = 50.0;
-  bool _overamplification = false;
-
-  // Input settings
-  List<AudioDevice> _inputDevices = [];
-  AudioDevice? _selectedInputDevice;
-  double _inputVolume = 75.0;
-
-  @override
-  void initState() {
-    super.initState();
-    _initAudioSettings();
-    _updateTimer = Timer.periodic(
-      const Duration(seconds: 2),
-      (_) => _refreshAudioInfo(),
+  Widget build(BuildContext context) {
+    return BlocProvider(
+      create: (context) => AudioSettingsBloc()..add(const LoadAudioSettings()),
+      child: const AudioSettingsView(),
     );
   }
+}
 
-  @override
-  void dispose() {
-    _updateTimer?.cancel();
-    super.dispose();
-  }
-
-  Future<void> _initAudioSettings() async {
-    await _refreshAudioInfo();
-  }
-
-  Future<void> _refreshAudioInfo() async {
-    if (!mounted) return;
-    try {
-      await Future.wait([
-        _getOutputDevices(),
-        _getInputDevices(),
-        _getOutputVolume(),
-        _getInputVolume(),
-        _getBalance(),
-      ]);
-    } catch (e) {
-      debugPrint('Audio refresh error: $e');
-    }
-  }
-
-  Future<void> _getOutputDevices() async {
-    try {
-      final result = await Process.run('pactl', ['list', 'short', 'sinks']);
-      if (result.exitCode == 0) {
-        final lines = result.stdout.toString().split('\n');
-        final List<AudioDevice> devices = [];
-        String? defaultSink;
-
-        // Get default sink
-        final defaultResult = await Process.run('pactl', ['get-default-sink']);
-        if (defaultResult.exitCode == 0) {
-          defaultSink = defaultResult.stdout.toString().trim();
-        }
-
-        for (final line in lines) {
-          if (line.trim().isEmpty) continue;
-          final parts = line.split('\t');
-          if (parts.length >= 2) {
-            final sinkIndex = parts[0];
-            final sinkName = parts[1];
-            String description = sinkName;
-
-            // Get description
-            try {
-              final infoResult = await Process.run(
-                'pactl',
-                ['list', 'sinks', 'short'],
-              );
-              if (infoResult.exitCode == 0) {
-                final infoLines = infoResult.stdout.toString().split('\n');
-                for (final infoLine in infoLines) {
-                  if (infoLine.contains(sinkName)) {
-                    final infoParts = infoLine.split('\t');
-                    if (infoParts.length >= 2) {
-                      description = infoParts[1];
-                    }
-                  }
-                }
-              }
-            } catch (_) {}
-
-            // Get better description using pactl info
-            try {
-              final sinkInfo = await Process.run(
-                'pactl',
-                ['list', 'sinks'],
-              );
-              if (sinkInfo.exitCode == 0) {
-                final sinkInfoLines = sinkInfo.stdout.toString().split('\n');
-                bool inSink = false;
-                for (final infoLine in sinkInfoLines) {
-                  if (infoLine.contains('Sink #$sinkIndex') ||
-                      infoLine.contains('Name: $sinkName')) {
-                    inSink = true;
-                    continue;
-                  }
-                  if (inSink && infoLine.contains('Description:')) {
-                    description = infoLine.split('Description:')[1].trim();
-                    break;
-                  }
-                  if (inSink && infoLine.startsWith('Sink #')) {
-                    break;
-                  }
-                }
-              }
-            } catch (_) {}
-
-            final isDefault = sinkName == defaultSink;
-            
-            // Check if device already exists to avoid duplicates
-            if (!devices.any((d) => d.name == sinkName)) {
-              devices.add(AudioDevice(
-                name: sinkName,
-                description: description,
-                isInput: false,
-                isDefault: isDefault,
-              ));
-
-              if (isDefault && _selectedOutputDevice == null) {
-                setState(() => _selectedOutputDevice = devices.last);
-              }
-            }
-          }
-        }
-
-        if (mounted) {
-          setState(() {
-            _outputDevices = devices;
-            // Update selected device to match one from the list if available
-            if (_selectedOutputDevice != null) {
-              final matching = devices.firstWhere(
-                (d) => d.name == _selectedOutputDevice!.name,
-                orElse: () => _selectedOutputDevice!,
-              );
-              _selectedOutputDevice = matching;
-            } else if (devices.isNotEmpty) {
-              _selectedOutputDevice = devices.firstWhere(
-                (d) => d.isDefault,
-                orElse: () => devices.first,
-              );
-            }
-          });
-        }
-      }
-    } catch (e) {
-      debugPrint('Get output devices error: $e');
-    }
-  }
-
-  Future<void> _getInputDevices() async {
-    try {
-      final result = await Process.run('pactl', ['list', 'short', 'sources']);
-      if (result.exitCode == 0) {
-        final lines = result.stdout.toString().split('\n');
-        final List<AudioDevice> devices = [];
-        String? defaultSource;
-
-        // Get default source (excluding monitors)
-        final defaultResult = await Process.run('pactl', ['get-default-source']);
-        if (defaultResult.exitCode == 0) {
-          defaultSource = defaultResult.stdout.toString().trim();
-        }
-
-        for (final line in lines) {
-          if (line.trim().isEmpty) continue;
-          final parts = line.split('\t');
-          if (parts.length >= 2) {
-            final sourceIndex = parts[0];
-            final sourceName = parts[1];
-            
-            // Skip monitor sources
-            if (sourceName.contains('.monitor')) continue;
-
-            String description = sourceName;
-
-            // Get better description
-            try {
-              final sourceInfo = await Process.run(
-                'pactl',
-                ['list', 'sources'],
-              );
-              if (sourceInfo.exitCode == 0) {
-                final sourceInfoLines = sourceInfo.stdout.toString().split('\n');
-                bool inSource = false;
-                for (final infoLine in sourceInfoLines) {
-                  if (infoLine.contains('Source #$sourceIndex') ||
-                      infoLine.contains('Name: $sourceName')) {
-                    inSource = true;
-                    continue;
-                  }
-                  if (inSource && infoLine.contains('Description:')) {
-                    description = infoLine.split('Description:')[1].trim();
-                    break;
-                  }
-                  if (inSource && infoLine.startsWith('Source #')) {
-                    break;
-                  }
-                }
-              }
-            } catch (_) {}
-
-            final isDefault = sourceName == defaultSource;
-            
-            // Check if device already exists to avoid duplicates
-            if (!devices.any((d) => d.name == sourceName)) {
-              devices.add(AudioDevice(
-                name: sourceName,
-                description: description,
-                isInput: true,
-                isDefault: isDefault,
-              ));
-
-              if (isDefault && _selectedInputDevice == null) {
-                setState(() => _selectedInputDevice = devices.last);
-              }
-            }
-          }
-        }
-
-        if (mounted) {
-          setState(() {
-            _inputDevices = devices;
-            // Update selected device to match one from the list if available
-            if (_selectedInputDevice != null) {
-              final matching = devices.firstWhere(
-                (d) => d.name == _selectedInputDevice!.name,
-                orElse: () => _selectedInputDevice!,
-              );
-              _selectedInputDevice = matching;
-            } else if (devices.isNotEmpty) {
-              _selectedInputDevice = devices.firstWhere(
-                (d) => d.isDefault,
-                orElse: () => devices.first,
-              );
-            }
-          });
-        }
-      }
-    } catch (e) {
-      debugPrint('Get input devices error: $e');
-    }
-  }
-
-  Future<void> _getOutputVolume() async {
-    try {
-      final result = await Process.run('pactl', [
-        'get-sink-volume',
-        '@DEFAULT_SINK@',
-      ]);
-      if (result.exitCode == 0) {
-        final output = result.stdout.toString();
-        final match = RegExp(r'(\d+)%').firstMatch(output);
-        if (match != null) {
-          final volume = int.tryParse(match.group(1) ?? '') ?? 75;
-          if (mounted) {
-            setState(() => _outputVolume = volume.toDouble());
-          }
-        }
-      }
-    } catch (e) {
-      debugPrint('Get output volume error: $e');
-    }
-  }
-
-  Future<void> _getInputVolume() async {
-    try {
-      final result = await Process.run('pactl', [
-        'get-source-volume',
-        '@DEFAULT_SOURCE@',
-      ]);
-      if (result.exitCode == 0) {
-        final output = result.stdout.toString();
-        final match = RegExp(r'(\d+)%').firstMatch(output);
-        if (match != null) {
-          final volume = int.tryParse(match.group(1) ?? '') ?? 75;
-          if (mounted) {
-            setState(() => _inputVolume = volume.toDouble());
-          }
-        }
-      }
-    } catch (e) {
-      debugPrint('Get input volume error: $e');
-    }
-  }
-
-  Future<void> _getBalance() async {
-    try {
-      // Balance is typically stored per-channel, we'll calculate from left/right
-      final result = await Process.run('pactl', [
-        'get-sink-volume',
-        '@DEFAULT_SINK@',
-      ]);
-      if (result.exitCode == 0) {
-        final output = result.stdout.toString();
-        // Try to extract left and right channel volumes
-        final matches = RegExp(r'(\d+)%').allMatches(output).toList();
-        if (matches.length >= 2) {
-          final left = int.tryParse(matches[0].group(1) ?? '') ?? 50;
-          final right = int.tryParse(matches[1].group(1) ?? '') ?? 50;
-          // Calculate balance: 0 = left, 50 = center, 100 = right
-          final balance = ((right - left) / 2) + 50;
-          if (mounted) {
-            setState(() => _balance = balance.clamp(0.0, 100.0));
-          }
-        }
-      }
-    } catch (e) {
-      debugPrint('Get balance error: $e');
-    }
-  }
-
-  Future<void> _setOutputDevice(AudioDevice device) async {
-    try {
-      await Process.run('pactl', ['set-default-sink', device.name]);
-      setState(() => _selectedOutputDevice = device);
-      await _refreshAudioInfo();
-    } catch (e) {
-      debugPrint('Set output device error: $e');
-    }
-  }
-
-  Future<void> _setInputDevice(AudioDevice device) async {
-    try {
-      await Process.run('pactl', ['set-default-source', device.name]);
-      setState(() => _selectedInputDevice = device);
-      await _refreshAudioInfo();
-    } catch (e) {
-      debugPrint('Set input device error: $e');
-    }
-  }
-
-  Future<void> _setOutputVolume(double value) async {
-    setState(() => _outputVolume = value);
-    try {
-      final volumePercent = value.toInt();
-      await Process.run('pactl', [
-        'set-sink-volume',
-        '@DEFAULT_SINK@',
-        '$volumePercent%',
-      ]);
-    } catch (e) {
-      debugPrint('Set output volume error: $e');
-    }
-  }
-
-  Future<void> _setInputVolume(double value) async {
-    setState(() => _inputVolume = value);
-    try {
-      final volumePercent = value.toInt();
-      await Process.run('pactl', [
-        'set-source-volume',
-        '@DEFAULT_SOURCE@',
-        '$volumePercent%',
-      ]);
-    } catch (e) {
-      debugPrint('Set input volume error: $e');
-    }
-  }
-
-  Future<void> _setBalance(double value) async {
-    setState(() => _balance = value);
-    try {
-      // Calculate left and right volumes from balance
-      // Balance: 0 = left only, 50 = center, 100 = right only
-      final diff = (value - 50) * 2; // -100 to +100
-      final leftPercent = (_outputVolume - diff).clamp(0.0, 100.0);
-      final rightPercent = (_outputVolume + diff).clamp(0.0, 100.0);
-
-      await Process.run('pactl', [
-        'set-sink-volume',
-        '@DEFAULT_SINK@',
-        '${leftPercent.toInt()}%',
-        '${rightPercent.toInt()}%',
-      ]);
-    } catch (e) {
-      debugPrint('Set balance error: $e');
-    }
-  }
-
-  Future<void> _testOutput() async {
-    try {
-      // Play a test sound
-      await Process.run('paplay', ['/usr/share/sounds/freedesktop/stereo/bell.ogg']);
-    } catch (_) {
-      // Try alternative test sound
-      try {
-        await Process.run('speaker-test', ['-t', 'sine', '-f', '1000', '-l', '1', '-c', '2']);
-      } catch (_) {}
-    }
-  }
+/// The main view widget that builds the UI
+class AudioSettingsView extends StatelessWidget {
+  const AudioSettingsView({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -465,93 +46,139 @@ class _AudioSettingsPageState extends State<AudioSettingsPage> {
               ),
             ),
             const SizedBox(height: 48),
-            // Output Section
-            _buildOutputSection(),
+            const _OutputSection(),
             const SizedBox(height: 32),
-            // Input Section
-            _buildInputSection(),
+            const _InputSection(),
             const SizedBox(height: 32),
-            // Sounds Section
-            _buildSoundsSection(),
+            const _SoundsSection(),
           ],
         ),
       ),
     );
   }
+}
 
-  Widget _buildOutputSection() {
-    return _buildSection(
-      'Output',
-      children: [
-        _buildDeviceDropdown(
-          'Output Device',
-          _selectedOutputDevice,
-          _outputDevices,
-          Icons.headphones_rounded,
-          (device) => _setOutputDevice(device),
-          showTestButton: true,
-        ),
-        const SizedBox(height: 24),
-        _buildVolumeSlider(
-          'Output Volume',
-          _outputVolume,
-          Icons.volume_up_rounded,
-          _setOutputVolume,
-        ),
-        const SizedBox(height: 24),
-        _buildBalanceSlider(),
-        const SizedBox(height: 24),
-        _buildToggleSetting(
-          'Overamplification',
-          _overamplification,
-          'Allow volume to exceed 100%, with reduced sound quality',
-          (value) => setState(() => _overamplification = value),
-        ),
-      ],
+// ============================================================================
+// Output Section
+// ============================================================================
+
+class _OutputSection extends StatelessWidget {
+  const _OutputSection();
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<AudioSettingsBloc, AudioSettingsState>(
+      builder: (context, state) {
+        return _SectionContainer(
+          title: 'Output',
+          children: [
+            _DeviceDropdown(
+              label: 'Output Device',
+              selectedDevice: state.selectedOutputDevice,
+              devices: state.outputDevices,
+              icon: Icons.headphones_rounded,
+              onChanged: (device) => context.read<AudioSettingsBloc>().add(
+                SetOutputDevice(device),
+              ),
+              showTestButton: true,
+              onTest: () => context.read<AudioSettingsBloc>().add(
+                const TestAudioOutput(),
+              ),
+            ),
+            const SizedBox(height: 24),
+            _VolumeSlider(
+              label: 'Output Volume',
+              value: state.outputVolume,
+              icon: Icons.volume_up_rounded,
+              max: state.overamplification ? 150.0 : 100.0,
+              onChanged: (value) =>
+                  context.read<AudioSettingsBloc>().add(SetOutputVolume(value)),
+            ),
+            const SizedBox(height: 24),
+            _BalanceSlider(
+              balance: state.balance,
+              onChanged: (value) =>
+                  context.read<AudioSettingsBloc>().add(SetBalance(value)),
+            ),
+            const SizedBox(height: 24),
+            _ToggleSetting(
+              label: 'Overamplification',
+              value: state.overamplification,
+              description:
+                  'Allow volume to exceed 100%, with reduced sound quality',
+              onChanged: (value) => context.read<AudioSettingsBloc>().add(
+                SetOveramplification(value),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
+}
 
-  Widget _buildInputSection() {
-    return _buildSection(
-      'Input',
-      children: [
-        _buildDeviceDropdown(
-          'Input Device',
-          _selectedInputDevice,
-          _inputDevices,
-          Icons.mic_rounded,
-          (device) => _setInputDevice(device),
-        ),
-        const SizedBox(height: 24),
-        _buildVolumeSlider(
-          'Input Volume',
-          _inputVolume,
-          Icons.mic_rounded,
-          _setInputVolume,
-        ),
-      ],
+// ============================================================================
+// Input Section
+// ============================================================================
+
+class _InputSection extends StatelessWidget {
+  const _InputSection();
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<AudioSettingsBloc, AudioSettingsState>(
+      builder: (context, state) {
+        return _SectionContainer(
+          title: 'Input',
+          children: [
+            _DeviceDropdown(
+              label: 'Input Device',
+              selectedDevice: state.selectedInputDevice,
+              devices: state.inputDevices,
+              icon: Icons.mic_rounded,
+              onChanged: (device) =>
+                  context.read<AudioSettingsBloc>().add(SetInputDevice(device)),
+            ),
+            const SizedBox(height: 24),
+            _VolumeSlider(
+              label: 'Input Volume',
+              value: state.inputVolume,
+              icon: Icons.mic_rounded,
+              onChanged: (value) =>
+                  context.read<AudioSettingsBloc>().add(SetInputVolume(value)),
+            ),
+          ],
+        );
+      },
     );
   }
+}
 
-  Widget _buildSoundsSection() {
-    return _buildSection(
-      'Sounds',
+// ============================================================================
+// Sounds Section
+// ============================================================================
+
+class _SoundsSection extends StatelessWidget {
+  const _SoundsSection();
+
+  @override
+  Widget build(BuildContext context) {
+    return _SectionContainer(
+      title: 'Sounds',
       children: [
-        _buildClickableItem(
-          'Volume Levels',
+        _ClickableItem(
+          label: 'Volume Levels',
           onTap: () {
-            // TODO: Navigate to volume levels page
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(content: Text('Volume Levels - Coming soon')),
             );
           },
         ),
         const SizedBox(height: 16),
-        _buildClickableItem(
-          'Alert Sound',
+        _ClickableItem(
+          label: 'Alert Sound',
           value: 'Default',
           onTap: () {
-            // TODO: Navigate to alert sound selection
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(content: Text('Alert Sound - Coming soon')),
             );
@@ -560,8 +187,20 @@ class _AudioSettingsPageState extends State<AudioSettingsPage> {
       ],
     );
   }
+}
 
-  Widget _buildSection(String title, {required List<Widget> children}) {
+// ============================================================================
+// Shared UI Components
+// ============================================================================
+
+class _SectionContainer extends StatelessWidget {
+  final String title;
+  final List<Widget> children;
+
+  const _SectionContainer({required this.title, required this.children});
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -600,15 +239,29 @@ class _AudioSettingsPageState extends State<AudioSettingsPage> {
       ),
     );
   }
+}
 
-  Widget _buildDeviceDropdown(
-    String label,
-    AudioDevice? selectedDevice,
-    List<AudioDevice> devices,
-    IconData icon,
-    ValueChanged<AudioDevice> onChanged, {
-    bool showTestButton = false,
-  }) {
+class _DeviceDropdown extends StatelessWidget {
+  final String label;
+  final AudioDevice? selectedDevice;
+  final List<AudioDevice> devices;
+  final IconData icon;
+  final ValueChanged<AudioDevice> onChanged;
+  final bool showTestButton;
+  final VoidCallback? onTest;
+
+  const _DeviceDropdown({
+    required this.label,
+    required this.selectedDevice,
+    required this.devices,
+    required this.icon,
+    required this.onChanged,
+    this.showTestButton = false,
+    this.onTest,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -624,10 +277,10 @@ class _AudioSettingsPageState extends State<AudioSettingsPage> {
                 color: Colors.white,
               ),
             ),
-            if (showTestButton) ...[
+            if (showTestButton && onTest != null) ...[
               const Spacer(),
               TextButton(
-                onPressed: _testOutput,
+                onPressed: onTest,
                 child: const Text(
                   'Test...',
                   style: TextStyle(color: Colors.blueAccent),
@@ -667,13 +320,25 @@ class _AudioSettingsPageState extends State<AudioSettingsPage> {
       ],
     );
   }
+}
 
-  Widget _buildVolumeSlider(
-    String label,
-    double value,
-    IconData icon,
-    ValueChanged<double> onChanged,
-  ) {
+class _VolumeSlider extends StatelessWidget {
+  final String label;
+  final double value;
+  final IconData icon;
+  final double max;
+  final ValueChanged<double> onChanged;
+
+  const _VolumeSlider({
+    required this.label,
+    required this.value,
+    required this.icon,
+    this.max = 100.0,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -702,17 +367,25 @@ class _AudioSettingsPageState extends State<AudioSettingsPage> {
             thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 8),
           ),
           child: Slider(
-            value: value.clamp(0.0, _overamplification ? 150.0 : 100.0),
+            value: value.clamp(0.0, max),
             min: 0,
-            max: _overamplification ? 150.0 : 100.0,
+            max: max,
             onChanged: onChanged,
           ),
         ),
       ],
     );
   }
+}
 
-  Widget _buildBalanceSlider() {
+class _BalanceSlider extends StatelessWidget {
+  final double balance;
+  final ValueChanged<double> onChanged;
+
+  const _BalanceSlider({required this.balance, required this.onChanged});
+
+  @override
+  Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -735,22 +408,32 @@ class _AudioSettingsPageState extends State<AudioSettingsPage> {
             thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 8),
           ),
           child: Slider(
-            value: _balance.clamp(0.0, 100.0),
+            value: balance.clamp(0.0, 100.0),
             min: 0,
             max: 100,
-            onChanged: _setBalance,
+            onChanged: onChanged,
           ),
         ),
       ],
     );
   }
+}
 
-  Widget _buildToggleSetting(
-    String label,
-    bool value,
-    String? description,
-    ValueChanged<bool> onChanged,
-  ) {
+class _ToggleSetting extends StatelessWidget {
+  final String label;
+  final bool value;
+  final String? description;
+  final ValueChanged<bool> onChanged;
+
+  const _ToggleSetting({
+    required this.label,
+    required this.value,
+    this.description,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -769,7 +452,7 @@ class _AudioSettingsPageState extends State<AudioSettingsPage> {
               if (description != null) ...[
                 const SizedBox(height: 4),
                 Text(
-                  description,
+                  description!,
                   style: TextStyle(
                     fontSize: 12,
                     color: Colors.white.withOpacity(0.6),
@@ -787,12 +470,17 @@ class _AudioSettingsPageState extends State<AudioSettingsPage> {
       ],
     );
   }
+}
 
-  Widget _buildClickableItem(
-    String label, {
-    String? value,
-    VoidCallback? onTap,
-  }) {
+class _ClickableItem extends StatelessWidget {
+  final String label;
+  final String? value;
+  final VoidCallback? onTap;
+
+  const _ClickableItem({required this.label, this.value, this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
@@ -808,20 +496,16 @@ class _AudioSettingsPageState extends State<AudioSettingsPage> {
           children: [
             Text(
               label,
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-                color: Colors.white,
-              ),
+              style: const TextStyle(fontSize: 14, color: Colors.white),
             ),
             Row(
               children: [
                 if (value != null) ...[
                   Text(
-                    value,
+                    value!,
                     style: TextStyle(
-                      color: Colors.white.withOpacity(0.7),
                       fontSize: 14,
+                      color: Colors.white.withOpacity(0.6),
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -839,4 +523,3 @@ class _AudioSettingsPageState extends State<AudioSettingsPage> {
     );
   }
 }
-

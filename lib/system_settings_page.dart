@@ -1,29 +1,26 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:dbus/dbus.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:antidote/features/system_settings/system_settings.dart';
 
-class SystemSettingsPage extends StatefulWidget {
+/// System Settings Page using BLoC pattern
+class SystemSettingsPage extends StatelessWidget {
   const SystemSettingsPage({super.key});
 
   @override
-  State<SystemSettingsPage> createState() => _SystemSettingsPageState();
+  Widget build(BuildContext context) {
+    return BlocProvider(
+      create: (context) =>
+          SystemSettingsBloc()..add(const LoadSystemSettings()),
+      child: const SystemSettingsView(),
+    );
+  }
 }
 
-class _SystemSettingsPageState extends State<SystemSettingsPage> {
-  late DBusClient _sysbus;
-
-  @override
-  void initState() {
-    super.initState();
-    _sysbus = DBusClient.system();
-  }
-
-  @override
-  void dispose() {
-    _sysbus.close();
-    super.dispose();
-  }
+/// The main view widget that builds the UI
+class SystemSettingsView extends StatelessWidget {
+  const SystemSettingsView({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -58,46 +55,46 @@ class _SystemSettingsPageState extends State<SystemSettingsPage> {
               ),
             ),
             const SizedBox(height: 32),
-            _buildSystemItem(
+            _SystemMenuItem(
               icon: Icons.language_rounded,
               title: 'Region & Language',
               subtitle: 'System language and localization',
-              onTap: () => _showRegionLanguageDialog(),
+              onTap: () => _showRegionLanguageDialog(context),
             ),
             const SizedBox(height: 12),
-            _buildSystemItem(
+            _SystemMenuItem(
               icon: Icons.access_time_rounded,
               title: 'Date & Time',
               subtitle: 'Time zone and clock settings',
-              onTap: () => _showDateTimeDialog(),
+              onTap: () => _showDateTimeDialog(context),
             ),
             const SizedBox(height: 12),
-            _buildSystemItem(
+            _SystemMenuItem(
               icon: Icons.people_rounded,
               title: 'Users',
               subtitle: 'Add and remove accounts, change password',
-              onTap: () => _showUsersDialog(),
+              onTap: () => _showUsersDialog(context),
             ),
             const SizedBox(height: 12),
-            _buildSystemItem(
+            _SystemMenuItem(
               icon: Icons.desktop_windows_rounded,
               title: 'Remote Desktop',
               subtitle: 'Allow this device to be used remotely',
-              onTap: () => _showRemoteDesktopDialog(),
+              onTap: () => _showRemoteDesktopDialog(context),
             ),
             const SizedBox(height: 12),
-            _buildSystemItem(
+            _SystemMenuItem(
               icon: Icons.terminal_rounded,
               title: 'Secure Shell',
               subtitle: 'SSH network access',
-              onTap: () => _showSecureShellDialog(),
+              onTap: () => _showSecureShellDialog(context),
             ),
             const SizedBox(height: 12),
-            _buildSystemItem(
+            _SystemMenuItem(
               icon: Icons.info_outline_rounded,
               title: 'About',
               subtitle: 'Hardware details and software versions',
-              onTap: () => _showAboutDialog(),
+              onTap: () => _showAboutDialog(context),
             ),
           ],
         ),
@@ -105,12 +102,47 @@ class _SystemSettingsPageState extends State<SystemSettingsPage> {
     );
   }
 
-  Widget _buildSystemItem({
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required VoidCallback onTap,
-  }) {
+  void _showRegionLanguageDialog(BuildContext context) {
+    showDialog(context: context, builder: (context) => _RegionLanguageDialog());
+  }
+
+  void _showDateTimeDialog(BuildContext context) {
+    showDialog(context: context, builder: (context) => _DateTimeDialog());
+  }
+
+  void _showUsersDialog(BuildContext context) {
+    showDialog(context: context, builder: (context) => _UsersDialog());
+  }
+
+  void _showRemoteDesktopDialog(BuildContext context) {
+    showDialog(context: context, builder: (context) => _RemoteDesktopDialog());
+  }
+
+  void _showSecureShellDialog(BuildContext context) {
+    showDialog(context: context, builder: (context) => _SecureShellDialog());
+  }
+
+  void _showAboutDialog(BuildContext context) {
+    showDialog(context: context, builder: (context) => _AboutDialog());
+  }
+}
+
+/// Reusable menu item widget
+class _SystemMenuItem extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  const _SystemMenuItem({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
@@ -163,48 +195,6 @@ class _SystemSettingsPageState extends State<SystemSettingsPage> {
           ],
         ),
       ),
-    );
-  }
-
-  void _showRegionLanguageDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => _RegionLanguageDialog(),
-    );
-  }
-
-  void _showDateTimeDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => _DateTimeDialog(),
-    );
-  }
-
-  void _showUsersDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => _UsersDialog(),
-    );
-  }
-
-  void _showRemoteDesktopDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => _RemoteDesktopDialog(),
-    );
-  }
-
-  void _showSecureShellDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => _SecureShellDialog(),
-    );
-  }
-
-  void _showAboutDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => _AboutDialog(),
     );
   }
 }
@@ -281,7 +271,10 @@ class _RegionLanguageDialogState extends State<_RegionLanguageDialog> {
               children: [
                 TextButton(
                   onPressed: () => Navigator.pop(context),
-                  child: const Text('Close', style: TextStyle(color: Colors.white70)),
+                  child: const Text(
+                    'Close',
+                    style: TextStyle(color: Colors.white70),
+                  ),
                 ),
               ],
             ),
@@ -358,7 +351,11 @@ class _DateTimeDialogState extends State<_DateTimeDialog> {
   Future<void> _loadDateTimeSettings() async {
     try {
       // Get current timezone
-      final tzResult = await Process.run('timedatectl', ['show', '--property=Timezone', '--value']);
+      final tzResult = await Process.run('timedatectl', [
+        'show',
+        '--property=Timezone',
+        '--value',
+      ]);
       if (tzResult.exitCode == 0) {
         setState(() => _timezone = tzResult.stdout.toString().trim());
       }
@@ -366,12 +363,15 @@ class _DateTimeDialogState extends State<_DateTimeDialog> {
       // Get available timezones
       final listResult = await Process.run('timedatectl', ['list-timezones']);
       if (listResult.exitCode == 0) {
-        final allTimezones = listResult.stdout.toString().split('\n')
-            .where((tz) => tz.isNotEmpty)
-            .toSet() // Remove duplicates
-            .toList()
-            ..sort();
-        
+        final allTimezones =
+            listResult.stdout
+                .toString()
+                .split('\n')
+                .where((tz) => tz.isNotEmpty)
+                .toSet() // Remove duplicates
+                .toList()
+              ..sort();
+
         setState(() {
           _timezones = allTimezones;
           // Ensure current timezone is in the list
@@ -382,9 +382,15 @@ class _DateTimeDialogState extends State<_DateTimeDialog> {
       }
 
       // Check if automatic time is enabled
-      final autoResult = await Process.run('timedatectl', ['show', '--property=NTP', '--value']);
+      final autoResult = await Process.run('timedatectl', [
+        'show',
+        '--property=NTP',
+        '--value',
+      ]);
       if (autoResult.exitCode == 0) {
-        setState(() => _automaticTime = autoResult.stdout.toString().trim() == 'yes');
+        setState(
+          () => _automaticTime = autoResult.stdout.toString().trim() == 'yes',
+        );
       }
     } catch (e) {
       debugPrint('Load date time settings error: $e');
@@ -452,7 +458,10 @@ class _DateTimeDialogState extends State<_DateTimeDialog> {
               children: [
                 TextButton(
                   onPressed: () => Navigator.pop(context),
-                  child: const Text('Close', style: TextStyle(color: Colors.white70)),
+                  child: const Text(
+                    'Close',
+                    style: TextStyle(color: Colors.white70),
+                  ),
                 ),
               ],
             ),
@@ -462,7 +471,11 @@ class _DateTimeDialogState extends State<_DateTimeDialog> {
     );
   }
 
-  Widget _buildToggleSetting(String label, bool value, ValueChanged<bool> onChanged) {
+  Widget _buildToggleSetting(
+    String label,
+    bool value,
+    ValueChanged<bool> onChanged,
+  ) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -489,7 +502,7 @@ class _DateTimeDialogState extends State<_DateTimeDialog> {
     if (_timezone.isNotEmpty && !timezoneList.contains(_timezone)) {
       timezoneList.insert(0, _timezone);
     }
-    
+
     // Remove duplicates and ensure value exists
     final uniqueTimezones = timezoneList.toSet().toList()..sort();
     final displayValue = uniqueTimezones.contains(_timezone) ? _timezone : null;
@@ -536,7 +549,6 @@ class _DateTimeDialogState extends State<_DateTimeDialog> {
       ],
     );
   }
-
 }
 
 // Users Dialog
@@ -560,7 +572,7 @@ class _UsersDialogState extends State<_UsersDialog> {
       if (result.exitCode == 0) {
         final lines = result.stdout.toString().split('\n');
         final List<Map<String, String>> users = [];
-        
+
         for (final line in lines) {
           final parts = line.split(':');
           if (parts.length >= 7) {
@@ -568,19 +580,18 @@ class _UsersDialogState extends State<_UsersDialog> {
             final uid = parts[2];
             final home = parts[5];
             final shell = parts[6];
-            
+
             // Filter system users (UID >= 1000 typically for regular users)
             final uidInt = int.tryParse(uid) ?? 0;
-            if (uidInt >= 1000 && (shell.contains('bash') || shell.contains('zsh') || shell.contains('fish'))) {
-              users.add({
-                'username': username,
-                'uid': uid,
-                'home': home,
-              });
+            if (uidInt >= 1000 &&
+                (shell.contains('bash') ||
+                    shell.contains('zsh') ||
+                    shell.contains('fish'))) {
+              users.add({'username': username, 'uid': uid, 'home': home});
             }
           }
         }
-        
+
         setState(() => _users = users);
       }
     } catch (e) {
@@ -594,7 +605,7 @@ class _UsersDialogState extends State<_UsersDialog> {
       title: 'Enter Administrator Password',
       hint: 'Password',
     );
-    
+
     if (adminPassword == null || adminPassword.isEmpty) {
       return;
     }
@@ -605,7 +616,7 @@ class _UsersDialogState extends State<_UsersDialog> {
       hint: 'New Password',
       confirm: true,
     );
-    
+
     if (newPassword == null || newPassword.isEmpty) {
       return;
     }
@@ -614,7 +625,7 @@ class _UsersDialogState extends State<_UsersDialog> {
       // Use chpasswd which is designed for non-interactive password changes
       // Format: username:password
       final passwordLine = '$username:$newPassword';
-      
+
       // Use bash -c to properly pipe the password line to chpasswd
       // First pipe admin password to sudo, then pipe password line to chpasswd
       final result = await Process.run('bash', [
@@ -647,10 +658,7 @@ class _UsersDialogState extends State<_UsersDialog> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: $e'),
-            backgroundColor: Colors.red,
-          ),
+          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
         );
       }
     }
@@ -662,7 +670,7 @@ class _UsersDialogState extends State<_UsersDialog> {
       title: 'Enter Administrator Password',
       hint: 'Password',
     );
-    
+
     if (adminPassword == null || adminPassword.isEmpty) {
       return;
     }
@@ -672,7 +680,7 @@ class _UsersDialogState extends State<_UsersDialog> {
       title: 'Create New User',
       hint: 'Username',
     );
-    
+
     if (username == null || username.isEmpty) {
       return;
     }
@@ -683,7 +691,7 @@ class _UsersDialogState extends State<_UsersDialog> {
       hint: 'Password',
       confirm: true,
     );
-    
+
     if (password == null || password.isEmpty) {
       return;
     }
@@ -735,7 +743,9 @@ class _UsersDialogState extends State<_UsersDialog> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('User created but password setting failed: ${passwdResult.stderr}'),
+              content: Text(
+                'User created but password setting failed: ${passwdResult.stderr}',
+              ),
               backgroundColor: Colors.orange,
             ),
           );
@@ -745,10 +755,7 @@ class _UsersDialogState extends State<_UsersDialog> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: $e'),
-            backgroundColor: Colors.red,
-          ),
+          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
         );
       }
     }
@@ -770,10 +777,7 @@ class _UsersDialogState extends State<_UsersDialog> {
         return AlertDialog(
           backgroundColor: const Color.fromARGB(255, 18, 22, 32),
           surfaceTintColor: Colors.transparent,
-          title: Text(
-            title,
-            style: const TextStyle(color: Colors.white),
-          ),
+          title: Text(title, style: const TextStyle(color: Colors.white)),
           content: StatefulBuilder(
             builder: (context, setState) => Column(
               mainAxisSize: MainAxisSize.min,
@@ -790,7 +794,8 @@ class _UsersDialogState extends State<_UsersDialog> {
                         obscureText ? Icons.visibility_off : Icons.visibility,
                         color: Colors.white54,
                       ),
-                      onPressed: () => setState(() => obscureText = !obscureText),
+                      onPressed: () =>
+                          setState(() => obscureText = !obscureText),
                     ),
                     enabledBorder: const UnderlineInputBorder(
                       borderSide: BorderSide(color: Colors.white24),
@@ -811,10 +816,14 @@ class _UsersDialogState extends State<_UsersDialog> {
                       hintStyle: const TextStyle(color: Colors.white54),
                       suffixIcon: IconButton(
                         icon: Icon(
-                          obscureConfirmText ? Icons.visibility_off : Icons.visibility,
+                          obscureConfirmText
+                              ? Icons.visibility_off
+                              : Icons.visibility,
                           color: Colors.white54,
                         ),
-                        onPressed: () => setState(() => obscureConfirmText = !obscureConfirmText),
+                        onPressed: () => setState(
+                          () => obscureConfirmText = !obscureConfirmText,
+                        ),
                       ),
                       enabledBorder: const UnderlineInputBorder(
                         borderSide: BorderSide(color: Colors.white24),
@@ -872,10 +881,7 @@ class _UsersDialogState extends State<_UsersDialog> {
         return AlertDialog(
           backgroundColor: const Color.fromARGB(255, 18, 22, 32),
           surfaceTintColor: Colors.transparent,
-          title: Text(
-            title,
-            style: const TextStyle(color: Colors.white),
-          ),
+          title: Text(title, style: const TextStyle(color: Colors.white)),
           content: TextField(
             onChanged: (v) => value = v,
             style: const TextStyle(color: Colors.white),
@@ -958,7 +964,11 @@ class _UsersDialogState extends State<_UsersDialog> {
                                 color: Color.fromARGB(255, 156, 39, 176),
                                 shape: BoxShape.circle,
                               ),
-                              child: const Icon(Icons.person, color: Colors.white, size: 24),
+                              child: const Icon(
+                                Icons.person,
+                                color: Colors.white,
+                                size: 24,
+                              ),
                             ),
                             title: Text(
                               user['username'] ?? '',
@@ -969,15 +979,23 @@ class _UsersDialogState extends State<_UsersDialog> {
                             ),
                             subtitle: Text(
                               'UID: ${user['uid']}',
-                              style: TextStyle(color: Colors.white.withOpacity(0.6)),
+                              style: TextStyle(
+                                color: Colors.white.withOpacity(0.6),
+                              ),
                             ),
                             trailing: PopupMenuButton<String>(
-                              icon: const Icon(Icons.more_vert, color: Colors.white70),
+                              icon: const Icon(
+                                Icons.more_vert,
+                                color: Colors.white70,
+                              ),
                               color: const Color.fromARGB(255, 45, 45, 45),
                               itemBuilder: (context) => [
                                 const PopupMenuItem(
                                   value: 'password',
-                                  child: Text('Change Password', style: TextStyle(color: Colors.white)),
+                                  child: Text(
+                                    'Change Password',
+                                    style: TextStyle(color: Colors.white),
+                                  ),
                                 ),
                               ],
                               onSelected: (value) {
@@ -1002,12 +1020,18 @@ class _UsersDialogState extends State<_UsersDialog> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.blueAccent,
                     foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
                   ),
                 ),
                 TextButton(
                   onPressed: () => Navigator.pop(context),
-                  child: const Text('Close', style: TextStyle(color: Colors.white70)),
+                  child: const Text(
+                    'Close',
+                    style: TextStyle(color: Colors.white70),
+                  ),
                 ),
               ],
             ),
@@ -1037,9 +1061,12 @@ class _RemoteDesktopDialogState extends State<_RemoteDesktopDialog> {
   Future<void> _loadRemoteDesktopSettings() async {
     try {
       // Check if remote desktop is enabled (VNC/RDP)
-      final vncResult = await Process.run('systemctl', ['is-active', 'vino-server']);
+      final vncResult = await Process.run('systemctl', [
+        'is-active',
+        'vino-server',
+      ]);
       setState(() => _remoteDesktopEnabled = vncResult.exitCode == 0);
-      
+
       // Check screen sharing (GNOME)
       final sharingResult = await Process.run('gsettings', [
         'get',
@@ -1047,7 +1074,10 @@ class _RemoteDesktopDialogState extends State<_RemoteDesktopDialog> {
         'enable',
       ]);
       if (sharingResult.exitCode == 0) {
-        setState(() => _screenSharingEnabled = sharingResult.stdout.toString().trim() == 'true');
+        setState(
+          () => _screenSharingEnabled =
+              sharingResult.stdout.toString().trim() == 'true',
+        );
       }
     } catch (e) {
       debugPrint('Load remote desktop settings error: $e');
@@ -1109,7 +1139,10 @@ class _RemoteDesktopDialogState extends State<_RemoteDesktopDialog> {
               children: [
                 TextButton(
                   onPressed: () => Navigator.pop(context),
-                  child: const Text('Close', style: TextStyle(color: Colors.white70)),
+                  child: const Text(
+                    'Close',
+                    style: TextStyle(color: Colors.white70),
+                  ),
                 ),
               ],
             ),
@@ -1274,7 +1307,10 @@ class _SecureShellDialogState extends State<_SecureShellDialog> {
               children: [
                 TextButton(
                   onPressed: () => Navigator.pop(context),
-                  child: const Text('Close', style: TextStyle(color: Colors.white70)),
+                  child: const Text(
+                    'Close',
+                    style: TextStyle(color: Colors.white70),
+                  ),
                 ),
               ],
             ),
@@ -1376,7 +1412,9 @@ class _AboutDialogState extends State<_AboutDialog> {
       // OS Version
       final osResult = await Process.run('lsb_release', ['-d']);
       if (osResult.exitCode == 0) {
-        setState(() => _osVersion = osResult.stdout.toString().split(':')[1].trim());
+        setState(
+          () => _osVersion = osResult.stdout.toString().split(':')[1].trim(),
+        );
       } else {
         // Fallback
         final osRelease = await Process.run('cat', ['/etc/os-release']);
@@ -1384,7 +1422,9 @@ class _AboutDialogState extends State<_AboutDialog> {
           final lines = osRelease.stdout.toString().split('\n');
           for (final line in lines) {
             if (line.startsWith('PRETTY_NAME=')) {
-              setState(() => _osVersion = line.split('=')[1].replaceAll('"', ''));
+              setState(
+                () => _osVersion = line.split('=')[1].replaceAll('"', ''),
+              );
               break;
             }
           }
@@ -1428,7 +1468,9 @@ class _AboutDialogState extends State<_AboutDialog> {
         if (lines.length > 1) {
           final diskLine = lines[1].split(RegExp(r'\s+'));
           if (diskLine.length > 2) {
-            setState(() => _disk = '${diskLine[1]} total, ${diskLine[3]} available');
+            setState(
+              () => _disk = '${diskLine[1]} total, ${diskLine[3]} available',
+            );
           }
         }
       }
@@ -1475,7 +1517,10 @@ class _AboutDialogState extends State<_AboutDialog> {
               children: [
                 TextButton(
                   onPressed: () => Navigator.pop(context),
-                  child: const Text('Close', style: TextStyle(color: Colors.white70)),
+                  child: const Text(
+                    'Close',
+                    style: TextStyle(color: Colors.white70),
+                  ),
                 ),
               ],
             ),
@@ -1513,4 +1558,3 @@ class _AboutDialogState extends State<_AboutDialog> {
     );
   }
 }
-

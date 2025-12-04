@@ -1,327 +1,23 @@
-import 'dart:async';
-import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:dbus/dbus.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:antidote/features/mouse_settings/mouse_settings.dart';
 
-class MouseSettingsPage extends StatefulWidget {
+/// Mouse Settings Page using BLoC pattern
+class MouseSettingsPage extends StatelessWidget {
   const MouseSettingsPage({super.key});
 
   @override
-  State<MouseSettingsPage> createState() => _MouseSettingsPageState();
-}
-
-class _MouseSettingsPageState extends State<MouseSettingsPage> {
-  late DBusClient _sysbus;
-  Timer? _updateTimer;
-  int _selectedTab = 0; // 0 = Mouse, 1 = Touchpad
-
-  // Mouse settings
-  String _primaryButton = 'left'; // 'left' or 'right'
-  double _mousePointerSpeed = 0.5;
-  bool _mouseAcceleration = true;
-  String _scrollDirection = 'traditional'; // 'traditional' or 'natural'
-
-  // Touchpad settings
-  bool _touchpadEnabled = true;
-  bool _disableTouchpadWhileTyping = true;
-  double _touchpadPointerSpeed = 0.5;
-  String _secondaryClick = 'two-finger'; // 'two-finger' or 'corner'
-  bool _tapToClick = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _sysbus = DBusClient.system();
-    _initMouseSettings();
-    _updateTimer = Timer.periodic(
-      const Duration(seconds: 3),
-      (_) => _refreshSettings(),
+  Widget build(BuildContext context) {
+    return BlocProvider(
+      create: (context) => MouseSettingsBloc()..add(const LoadMouseSettings()),
+      child: const MouseSettingsView(),
     );
   }
+}
 
-  @override
-  void dispose() {
-    _updateTimer?.cancel();
-    _sysbus.close();
-    super.dispose();
-  }
-
-  Future<void> _initMouseSettings() async {
-    await _refreshSettings();
-  }
-
-  Future<void> _refreshSettings() async {
-    if (!mounted) return;
-    try {
-      await Future.wait([
-        _getMouseSettings(),
-        _getTouchpadSettings(),
-      ]);
-    } catch (e) {
-      debugPrint('Settings refresh error: $e');
-    }
-  }
-
-  Future<void> _getMouseSettings() async {
-    try {
-      // Get primary button
-      final leftHandedResult = await Process.run('gsettings', [
-        'get',
-        'org.gnome.desktop.peripherals.mouse',
-        'left-handed',
-      ]);
-      if (leftHandedResult.exitCode == 0) {
-        final value = leftHandedResult.stdout.toString().trim();
-        if (mounted) {
-          setState(() => _primaryButton = value == 'true' ? 'right' : 'left');
-        }
-      }
-
-      // Get pointer speed
-      final speedResult = await Process.run('gsettings', [
-        'get',
-        'org.gnome.desktop.peripherals.mouse',
-        'speed',
-      ]);
-      if (speedResult.exitCode == 0) {
-        final value = double.tryParse(speedResult.stdout.toString().trim()) ?? 0.0;
-        if (mounted) {
-          setState(() => _mousePointerSpeed = (value + 1.0) / 2.0); // Convert -1.0 to 1.0 to 0.0 to 1.0
-        }
-      }
-
-      // Get acceleration
-      final accelResult = await Process.run('gsettings', [
-        'get',
-        'org.gnome.desktop.peripherals.mouse',
-        'accel-profile',
-      ]);
-      if (accelResult.exitCode == 0) {
-        final value = accelResult.stdout.toString().trim();
-        if (mounted) {
-          setState(() => _mouseAcceleration = value != "'flat'");
-        }
-      }
-
-      // Get scroll direction (natural scrolling)
-      final naturalResult = await Process.run('gsettings', [
-        'get',
-        'org.gnome.desktop.peripherals.mouse',
-        'natural-scroll',
-      ]);
-      if (naturalResult.exitCode == 0) {
-        final value = naturalResult.stdout.toString().trim();
-        if (mounted) {
-          setState(() => _scrollDirection = value == 'true' ? 'natural' : 'traditional');
-        }
-      }
-    } catch (e) {
-      debugPrint('Get mouse settings error: $e');
-    }
-  }
-
-  Future<void> _getTouchpadSettings() async {
-    try {
-      // Get touchpad enabled
-      final enabledResult = await Process.run('gsettings', [
-        'get',
-        'org.gnome.desktop.peripherals.touchpad',
-        'send-events',
-      ]);
-      if (enabledResult.exitCode == 0) {
-        final value = enabledResult.stdout.toString().trim();
-        if (mounted) {
-          setState(() => _touchpadEnabled = value != "'disabled'");
-        }
-      }
-
-      // Get disable while typing
-      final typingResult = await Process.run('gsettings', [
-        'get',
-        'org.gnome.desktop.peripherals.touchpad',
-        'disable-while-typing',
-      ]);
-      if (typingResult.exitCode == 0) {
-        final value = typingResult.stdout.toString().trim();
-        if (mounted) {
-          setState(() => _disableTouchpadWhileTyping = value == 'true');
-        }
-      }
-
-      // Get pointer speed
-      final speedResult = await Process.run('gsettings', [
-        'get',
-        'org.gnome.desktop.peripherals.touchpad',
-        'speed',
-      ]);
-      if (speedResult.exitCode == 0) {
-        final value = double.tryParse(speedResult.stdout.toString().trim()) ?? 0.0;
-        if (mounted) {
-          setState(() => _touchpadPointerSpeed = (value + 1.0) / 2.0);
-        }
-      }
-
-      // Get secondary click method
-      final clickMethodResult = await Process.run('gsettings', [
-        'get',
-        'org.gnome.desktop.peripherals.touchpad',
-        'click-method',
-      ]);
-      if (clickMethodResult.exitCode == 0) {
-        final value = clickMethodResult.stdout.toString().trim();
-        if (mounted) {
-          setState(() {
-            _secondaryClick = value == "'fingers'" ? 'two-finger' : 'corner';
-          });
-        }
-      }
-
-      // Get tap to click
-      final tapResult = await Process.run('gsettings', [
-        'get',
-        'org.gnome.desktop.peripherals.touchpad',
-        'tap-to-click',
-      ]);
-      if (tapResult.exitCode == 0) {
-        final value = tapResult.stdout.toString().trim();
-        if (mounted) {
-          setState(() => _tapToClick = value == 'true');
-        }
-      }
-    } catch (e) {
-      debugPrint('Get touchpad settings error: $e');
-    }
-  }
-
-  Future<void> _setPrimaryButton(String button) async {
-    try {
-      await Process.run('gsettings', [
-        'set',
-        'org.gnome.desktop.peripherals.mouse',
-        'left-handed',
-        button == 'right' ? 'true' : 'false',
-      ]);
-      setState(() => _primaryButton = button);
-    } catch (e) {
-      debugPrint('Set primary button error: $e');
-    }
-  }
-
-  Future<void> _setMousePointerSpeed(double value) async {
-    setState(() => _mousePointerSpeed = value);
-    try {
-      // Convert 0.0-1.0 to -1.0 to 1.0
-      final speed = (value * 2.0) - 1.0;
-      await Process.run('gsettings', [
-        'set',
-        'org.gnome.desktop.peripherals.mouse',
-        'speed',
-        speed.toStringAsFixed(2),
-      ]);
-    } catch (e) {
-      debugPrint('Set mouse pointer speed error: $e');
-    }
-  }
-
-  Future<void> _setMouseAcceleration(bool enabled) async {
-    try {
-      await Process.run('gsettings', [
-        'set',
-        'org.gnome.desktop.peripherals.mouse',
-        'accel-profile',
-        enabled ? "'adaptive'" : "'flat'",
-      ]);
-      setState(() => _mouseAcceleration = enabled);
-    } catch (e) {
-      debugPrint('Set mouse acceleration error: $e');
-    }
-  }
-
-  Future<void> _setScrollDirection(String direction) async {
-    try {
-      await Process.run('gsettings', [
-        'set',
-        'org.gnome.desktop.peripherals.mouse',
-        'natural-scroll',
-        direction == 'natural' ? 'true' : 'false',
-      ]);
-      setState(() => _scrollDirection = direction);
-    } catch (e) {
-      debugPrint('Set scroll direction error: $e');
-    }
-  }
-
-  Future<void> _setTouchpadEnabled(bool enabled) async {
-    try {
-      await Process.run('gsettings', [
-        'set',
-        'org.gnome.desktop.peripherals.touchpad',
-        'send-events',
-        enabled ? "'enabled'" : "'disabled'",
-      ]);
-      setState(() => _touchpadEnabled = enabled);
-    } catch (e) {
-      debugPrint('Set touchpad enabled error: $e');
-    }
-  }
-
-  Future<void> _setDisableTouchpadWhileTyping(bool enabled) async {
-    try {
-      await Process.run('gsettings', [
-        'set',
-        'org.gnome.desktop.peripherals.touchpad',
-        'disable-while-typing',
-        enabled.toString(),
-      ]);
-      setState(() => _disableTouchpadWhileTyping = enabled);
-    } catch (e) {
-      debugPrint('Set disable touchpad while typing error: $e');
-    }
-  }
-
-  Future<void> _setTouchpadPointerSpeed(double value) async {
-    setState(() => _touchpadPointerSpeed = value);
-    try {
-      // Convert 0.0-1.0 to -1.0 to 1.0
-      final speed = (value * 2.0) - 1.0;
-      await Process.run('gsettings', [
-        'set',
-        'org.gnome.desktop.peripherals.touchpad',
-        'speed',
-        speed.toStringAsFixed(2),
-      ]);
-    } catch (e) {
-      debugPrint('Set touchpad pointer speed error: $e');
-    }
-  }
-
-  Future<void> _setSecondaryClick(String method) async {
-    try {
-      await Process.run('gsettings', [
-        'set',
-        'org.gnome.desktop.peripherals.touchpad',
-        'click-method',
-        method == 'two-finger' ? "'fingers'" : "'areas'",
-      ]);
-      setState(() => _secondaryClick = method);
-    } catch (e) {
-      debugPrint('Set secondary click error: $e');
-    }
-  }
-
-  Future<void> _setTapToClick(bool enabled) async {
-    try {
-      await Process.run('gsettings', [
-        'set',
-        'org.gnome.desktop.peripherals.touchpad',
-        'tap-to-click',
-        enabled.toString(),
-      ]);
-      setState(() => _tapToClick = enabled);
-    } catch (e) {
-      debugPrint('Set tap to click error: $e');
-    }
-  }
+/// The main view widget that builds the UI
+class MouseSettingsView extends StatelessWidget {
+  const MouseSettingsView({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -350,31 +46,68 @@ class _MouseSettingsPageState extends State<MouseSettingsPage> {
               ),
             ),
             const SizedBox(height: 48),
-            _buildTabs(),
+            const _Tabs(),
             const SizedBox(height: 24),
-            _selectedTab == 0 ? _buildMouseTab() : _buildTouchpadTab(),
+            const _TabContent(),
             const SizedBox(height: 32),
-            _buildTestButton(),
+            const _TestButton(),
           ],
         ),
       ),
     );
   }
+}
 
-  Widget _buildTabs() {
-    return Row(
-      children: [
-        _buildTab('Mouse', 0),
-        const SizedBox(width: 8),
-        _buildTab('Touchpad', 1),
-      ],
+// ============================================================================
+// Tabs
+// ============================================================================
+
+class _Tabs extends StatelessWidget {
+  const _Tabs();
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<MouseSettingsBloc, MouseSettingsState>(
+      buildWhen: (previous, current) =>
+          previous.selectedTab != current.selectedTab,
+      builder: (context, state) {
+        return Row(
+          children: [
+            _TabButton(
+              label: 'Mouse',
+              isSelected: state.selectedTab == 0,
+              onTap: () =>
+                  context.read<MouseSettingsBloc>().add(const ChangeTab(0)),
+            ),
+            const SizedBox(width: 8),
+            _TabButton(
+              label: 'Touchpad',
+              isSelected: state.selectedTab == 1,
+              onTap: () =>
+                  context.read<MouseSettingsBloc>().add(const ChangeTab(1)),
+            ),
+          ],
+        );
+      },
     );
   }
+}
 
-  Widget _buildTab(String label, int index) {
-    final isSelected = _selectedTab == index;
+class _TabButton extends StatelessWidget {
+  final String label;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const _TabButton({
+    required this.label,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     return InkWell(
-      onTap: () => setState(() => _selectedTab = index),
+      onTap: onTap,
       borderRadius: BorderRadius.circular(8),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
@@ -399,49 +132,225 @@ class _MouseSettingsPageState extends State<MouseSettingsPage> {
       ),
     );
   }
+}
 
-  Widget _buildMouseTab() {
+// ============================================================================
+// Tab Content
+// ============================================================================
+
+class _TabContent extends StatelessWidget {
+  const _TabContent();
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<MouseSettingsBloc, MouseSettingsState>(
+      buildWhen: (previous, current) =>
+          previous.selectedTab != current.selectedTab,
+      builder: (context, state) {
+        return state.selectedTab == 0
+            ? const _MouseTab()
+            : const _TouchpadTab();
+      },
+    );
+  }
+}
+
+// ============================================================================
+// Mouse Tab
+// ============================================================================
+
+class _MouseTab extends StatelessWidget {
+  const _MouseTab();
+
+  @override
+  Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // General Section
-        _buildSection(
-          'General',
-          children: [
-            _buildPrimaryButtonSetting(),
-          ],
-        ),
-        const SizedBox(height: 24),
-        // Mouse Section
-        _buildSection(
-          'Mouse',
-          children: [
-            _buildPointerSpeedSlider(
-              'Pointer Speed',
-              _mousePointerSpeed,
-              _setMousePointerSpeed,
-            ),
-            const SizedBox(height: 24),
-            _buildAccelerationToggle(),
-          ],
-        ),
-        const SizedBox(height: 24),
-        // Scroll Direction Section
-        _buildSection(
-          'Scroll Direction',
-          children: [
-            _buildScrollDirectionOptions(),
-          ],
-        ),
+      children: const [
+        _GeneralSection(),
+        SizedBox(height: 24),
+        _MouseSection(),
+        SizedBox(height: 24),
+        _ScrollDirectionSection(),
       ],
     );
   }
+}
 
-  Widget _buildTouchpadTab() {
+class _GeneralSection extends StatelessWidget {
+  const _GeneralSection();
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<MouseSettingsBloc, MouseSettingsState>(
+      buildWhen: (previous, current) =>
+          previous.primaryButton != current.primaryButton,
+      builder: (context, state) {
+        return _Section(
+          title: 'General',
+          children: [
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Primary Button',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _SegmentedButton(
+                        label: 'Left',
+                        isSelected: state.primaryButton == 'left',
+                        onTap: () => context.read<MouseSettingsBloc>().add(
+                          const SetPrimaryButton('left'),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _SegmentedButton(
+                        label: 'Right',
+                        isSelected: state.primaryButton == 'right',
+                        onTap: () => context.read<MouseSettingsBloc>().add(
+                          const SetPrimaryButton('right'),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Order of physical buttons on mice and touchpads',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.white.withOpacity(0.6),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _MouseSection extends StatelessWidget {
+  const _MouseSection();
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<MouseSettingsBloc, MouseSettingsState>(
+      buildWhen: (previous, current) =>
+          previous.mousePointerSpeed != current.mousePointerSpeed ||
+          previous.mouseAcceleration != current.mouseAcceleration,
+      builder: (context, state) {
+        return _Section(
+          title: 'Mouse',
+          children: [
+            _PointerSpeedSlider(
+              label: 'Pointer Speed',
+              value: state.mousePointerSpeed,
+              onChanged: (value) => context.read<MouseSettingsBloc>().add(
+                SetMousePointerSpeed(value),
+              ),
+            ),
+            const SizedBox(height: 24),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.info_outline_rounded,
+                        size: 18,
+                        color: Colors.white.withOpacity(0.6),
+                      ),
+                      const SizedBox(width: 8),
+                      const Text(
+                        'Mouse Acceleration',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Switch(
+                  value: state.mouseAcceleration,
+                  onChanged: (value) => context.read<MouseSettingsBloc>().add(
+                    SetMouseAcceleration(value),
+                  ),
+                  activeColor: Colors.blueAccent,
+                ),
+              ],
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _ScrollDirectionSection extends StatelessWidget {
+  const _ScrollDirectionSection();
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<MouseSettingsBloc, MouseSettingsState>(
+      buildWhen: (previous, current) =>
+          previous.scrollDirection != current.scrollDirection,
+      builder: (context, state) {
+        return _Section(
+          title: 'Scroll Direction',
+          children: [
+            _RadioOption(
+              title: 'Traditional',
+              description: 'Scrolling moves the view',
+              isSelected: state.scrollDirection == 'traditional',
+              icon: Icons.arrow_upward_rounded,
+              onTap: () => context.read<MouseSettingsBloc>().add(
+                const SetScrollDirection('traditional'),
+              ),
+            ),
+            const SizedBox(height: 16),
+            _RadioOption(
+              title: 'Natural',
+              description: 'Scrolling moves the content',
+              isSelected: state.scrollDirection == 'natural',
+              icon: Icons.arrow_downward_rounded,
+              onTap: () => context.read<MouseSettingsBloc>().add(
+                const SetScrollDirection('natural'),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+// ============================================================================
+// Touchpad Tab
+// ============================================================================
+
+class _TouchpadTab extends StatelessWidget {
+  const _TouchpadTab();
+
+  @override
+  Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Touchpad Overview (placeholder for icon)
         Container(
           height: 120,
           width: double.infinity,
@@ -458,52 +367,177 @@ class _MouseSettingsPageState extends State<MouseSettingsPage> {
           ),
         ),
         const SizedBox(height: 24),
-        // General Touchpad Settings
-        _buildSection(
-          'Touchpad',
-          children: [
-            _buildToggleSetting(
-              'Touchpad',
-              _touchpadEnabled,
-              null,
-              _setTouchpadEnabled,
-            ),
-            const SizedBox(height: 16),
-            _buildToggleSetting(
-              'Disable Touchpad While Typing',
-              _disableTouchpadWhileTyping,
-              null,
-              _setDisableTouchpadWhileTyping,
-            ),
-            const SizedBox(height: 24),
-            _buildPointerSpeedSlider(
-              'Pointer Speed',
-              _touchpadPointerSpeed,
-              _setTouchpadPointerSpeed,
-            ),
-          ],
-        ),
+        const _TouchpadSection(),
         const SizedBox(height: 24),
-        // Clicking Section
-        _buildSection(
-          'Clicking',
-          children: [
-            _buildSecondaryClickOptions(),
-          ],
-        ),
+        const _ClickingSection(),
         const SizedBox(height: 24),
-        // Tap to Click Section
-        _buildSection(
-          'Tap to Click',
-          children: [
-            _buildTapToClickSetting(),
-          ],
-        ),
+        const _TapToClickSection(),
       ],
     );
   }
+}
 
-  Widget _buildSection(String title, {required List<Widget> children}) {
+class _TouchpadSection extends StatelessWidget {
+  const _TouchpadSection();
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<MouseSettingsBloc, MouseSettingsState>(
+      buildWhen: (previous, current) =>
+          previous.touchpadEnabled != current.touchpadEnabled ||
+          previous.disableWhileTyping != current.disableWhileTyping ||
+          previous.touchpadPointerSpeed != current.touchpadPointerSpeed,
+      builder: (context, state) {
+        return _Section(
+          title: 'Touchpad',
+          children: [
+            _ToggleSetting(
+              label: 'Touchpad',
+              value: state.touchpadEnabled,
+              onChanged: (value) => context.read<MouseSettingsBloc>().add(
+                SetTouchpadEnabled(value),
+              ),
+            ),
+            const SizedBox(height: 16),
+            _ToggleSetting(
+              label: 'Disable Touchpad While Typing',
+              value: state.disableWhileTyping,
+              onChanged: (value) => context.read<MouseSettingsBloc>().add(
+                SetDisableWhileTyping(value),
+              ),
+            ),
+            const SizedBox(height: 24),
+            _PointerSpeedSlider(
+              label: 'Pointer Speed',
+              value: state.touchpadPointerSpeed,
+              onChanged: (value) => context.read<MouseSettingsBloc>().add(
+                SetTouchpadPointerSpeed(value),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _ClickingSection extends StatelessWidget {
+  const _ClickingSection();
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<MouseSettingsBloc, MouseSettingsState>(
+      buildWhen: (previous, current) =>
+          previous.secondaryClick != current.secondaryClick,
+      builder: (context, state) {
+        return _Section(
+          title: 'Clicking',
+          children: [
+            const Text(
+              'Secondary Click',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: Colors.white,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: _SegmentedButton(
+                    label: 'Two-finger',
+                    isSelected: state.secondaryClick == 'two-finger',
+                    onTap: () => context.read<MouseSettingsBloc>().add(
+                      const SetSecondaryClick('two-finger'),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _SegmentedButton(
+                    label: 'Corner',
+                    isSelected: state.secondaryClick == 'corner',
+                    onTap: () => context.read<MouseSettingsBloc>().add(
+                      const SetSecondaryClick('corner'),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _TapToClickSection extends StatelessWidget {
+  const _TapToClickSection();
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<MouseSettingsBloc, MouseSettingsState>(
+      buildWhen: (previous, current) =>
+          previous.tapToClick != current.tapToClick,
+      builder: (context, state) {
+        return _Section(
+          title: 'Tap to Click',
+          children: [
+            _ToggleSetting(
+              label: 'Tap to Click',
+              description: 'Single finger tap to click buttons',
+              value: state.tapToClick,
+              onChanged: (value) =>
+                  context.read<MouseSettingsBloc>().add(SetTapToClick(value)),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+// ============================================================================
+// Test Button
+// ============================================================================
+
+class _TestButton extends StatelessWidget {
+  const _TestButton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: ElevatedButton.icon(
+        onPressed: () {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Test your mouse settings here')),
+          );
+        },
+        icon: const Icon(Icons.mouse_rounded),
+        label: const Text('Test Mouse'),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.blueAccent,
+          foregroundColor: Colors.white,
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+        ),
+      ),
+    );
+  }
+}
+
+// ============================================================================
+// Shared UI Components
+// ============================================================================
+
+class _Section extends StatelessWidget {
+  final String title;
+  final List<Widget> children;
+
+  const _Section({required this.title, required this.children});
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -528,52 +562,21 @@ class _MouseSettingsPageState extends State<MouseSettingsPage> {
       ),
     );
   }
+}
 
-  Widget _buildPrimaryButtonSetting() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Primary Button',
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-            color: Colors.white,
-          ),
-        ),
-        const SizedBox(height: 12),
-        Row(
-          children: [
-            Expanded(
-              child: _buildSegmentedButton(
-                'Left',
-                _primaryButton == 'left',
-                () => _setPrimaryButton('left'),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _buildSegmentedButton(
-                'Right',
-                _primaryButton == 'right',
-                () => _setPrimaryButton('right'),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        Text(
-          'Order of physical buttons on mice and touchpads',
-          style: TextStyle(
-            fontSize: 12,
-            color: Colors.white.withOpacity(0.6),
-          ),
-        ),
-      ],
-    );
-  }
+class _SegmentedButton extends StatelessWidget {
+  final String label;
+  final bool isSelected;
+  final VoidCallback onTap;
 
-  Widget _buildSegmentedButton(String label, bool isSelected, VoidCallback onTap) {
+  const _SegmentedButton({
+    required this.label,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(8),
@@ -586,7 +589,9 @@ class _MouseSettingsPageState extends State<MouseSettingsPage> {
               : Colors.white.withOpacity(0.05),
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
-            color: isSelected ? Colors.blueAccent : Colors.white.withOpacity(0.1),
+            color: isSelected
+                ? Colors.blueAccent
+                : Colors.white.withOpacity(0.1),
           ),
         ),
         child: Center(
@@ -602,12 +607,21 @@ class _MouseSettingsPageState extends State<MouseSettingsPage> {
       ),
     );
   }
+}
 
-  Widget _buildPointerSpeedSlider(
-    String label,
-    double value,
-    ValueChanged<double> onChanged,
-  ) {
+class _PointerSpeedSlider extends StatelessWidget {
+  final String label;
+  final double value;
+  final ValueChanged<double> onChanged;
+
+  const _PointerSpeedSlider({
+    required this.label,
+    required this.value,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -624,10 +638,7 @@ class _MouseSettingsPageState extends State<MouseSettingsPage> {
           children: [
             const Text(
               'Slow',
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.white70,
-              ),
+              style: TextStyle(fontSize: 12, color: Colors.white70),
             ),
             Expanded(
               child: SliderTheme(
@@ -637,7 +648,9 @@ class _MouseSettingsPageState extends State<MouseSettingsPage> {
                   inactiveTrackColor: Colors.white.withOpacity(0.2),
                   thumbColor: Colors.white,
                   overlayShape: SliderComponentShape.noOverlay,
-                  thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 8),
+                  thumbShape: const RoundSliderThumbShape(
+                    enabledThumbRadius: 8,
+                  ),
                 ),
                 child: Slider(
                   value: value.clamp(0.0, 1.0),
@@ -649,81 +662,32 @@ class _MouseSettingsPageState extends State<MouseSettingsPage> {
             ),
             const Text(
               'Fast',
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.white70,
-              ),
+              style: TextStyle(fontSize: 12, color: Colors.white70),
             ),
           ],
         ),
       ],
     );
   }
+}
 
-  Widget _buildAccelerationToggle() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Expanded(
-          child: Row(
-            children: [
-              Icon(
-                Icons.info_outline_rounded,
-                size: 18,
-                color: Colors.white.withOpacity(0.6),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  'Mouse Acceleration',
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-        Switch(
-          value: _mouseAcceleration,
-          onChanged: _setMouseAcceleration,
-          activeColor: Colors.blueAccent,
-        ),
-      ],
-    );
-  }
+class _RadioOption extends StatelessWidget {
+  final String title;
+  final String description;
+  final bool isSelected;
+  final IconData icon;
+  final VoidCallback onTap;
 
-  Widget _buildScrollDirectionOptions() {
-    return Column(
-      children: [
-        _buildRadioOption(
-          'Traditional',
-          'Scrolling moves the view',
-          _scrollDirection == 'traditional',
-          Icons.arrow_upward_rounded,
-          () => _setScrollDirection('traditional'),
-        ),
-        const SizedBox(height: 16),
-        _buildRadioOption(
-          'Natural',
-          'Scrolling moves the content',
-          _scrollDirection == 'natural',
-          Icons.arrow_downward_rounded,
-          () => _setScrollDirection('natural'),
-        ),
-      ],
-    );
-  }
+  const _RadioOption({
+    required this.title,
+    required this.description,
+    required this.isSelected,
+    required this.icon,
+    required this.onTap,
+  });
 
-  Widget _buildRadioOption(
-    String title,
-    String description,
-    bool isSelected,
-    IconData icon,
-    VoidCallback onTap,
-  ) {
+  @override
+  Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
@@ -786,100 +750,23 @@ class _MouseSettingsPageState extends State<MouseSettingsPage> {
       ),
     );
   }
+}
 
-  Widget _buildSecondaryClickOptions() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Secondary Click',
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-            color: Colors.white,
-          ),
-        ),
-        const SizedBox(height: 16),
-        _buildRadioOption(
-          'Two Finger Push',
-          'Push anywhere with 2 fingers',
-          _secondaryClick == 'two-finger',
-          Icons.touch_app_rounded,
-          () => _setSecondaryClick('two-finger'),
-        ),
-        const SizedBox(height: 16),
-        _buildRadioOption(
-          'Corner Push',
-          'Push with a single finger in the corner',
-          _secondaryClick == 'corner',
-          Icons.touch_app_rounded,
-          () => _setSecondaryClick('corner'),
-        ),
-      ],
-    );
-  }
+class _ToggleSetting extends StatelessWidget {
+  final String label;
+  final String? description;
+  final bool value;
+  final ValueChanged<bool> onChanged;
 
-  Widget _buildTapToClickSetting() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Tap to Click',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.white,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Quickly touch the touchpad to click',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.white.withOpacity(0.6),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Switch(
-              value: _tapToClick,
-              onChanged: _setTapToClick,
-              activeColor: Colors.blueAccent,
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        Container(
-          width: 48,
-          height: 48,
-          decoration: BoxDecoration(
-            color: Colors.blueAccent.withOpacity(0.2),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Icon(
-            Icons.touch_app_rounded,
-            color: Colors.blueAccent,
-            size: 24,
-          ),
-        ),
-      ],
-    );
-  }
+  const _ToggleSetting({
+    required this.label,
+    this.description,
+    required this.value,
+    required this.onChanged,
+  });
 
-  Widget _buildToggleSetting(
-    String label,
-    bool value,
-    String? description,
-    ValueChanged<bool> onChanged,
-  ) {
+  @override
+  Widget build(BuildContext context) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -898,7 +785,7 @@ class _MouseSettingsPageState extends State<MouseSettingsPage> {
               if (description != null) ...[
                 const SizedBox(height: 4),
                 Text(
-                  description,
+                  description!,
                   style: TextStyle(
                     fontSize: 12,
                     color: Colors.white.withOpacity(0.6),
@@ -916,29 +803,4 @@ class _MouseSettingsPageState extends State<MouseSettingsPage> {
       ],
     );
   }
-
-  Widget _buildTestButton() {
-    return Center(
-      child: ElevatedButton(
-        onPressed: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Test your settings by using your mouse/touchpad'),
-              duration: Duration(seconds: 2),
-            ),
-          );
-        },
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.white.withOpacity(0.1),
-          foregroundColor: Colors.white,
-          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
-        ),
-        child: const Text('Test Settings'),
-      ),
-    );
-  }
 }
-

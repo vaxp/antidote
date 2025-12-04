@@ -1,6 +1,6 @@
-import 'package:antidote/appbar.dart';
+import 'package:antidote/core/appbar.dart';
 import 'package:antidote/venom_effects.dart';
-import 'package:antidote/venom_layout.dart';
+import 'package:antidote/core/venom_layout.dart';
 import 'package:flutter/material.dart';
 import 'package:antidote/display_settings_page.dart';
 import 'package:antidote/wifi_settings_page.dart';
@@ -16,19 +16,16 @@ import 'package:window_manager/window_manager.dart';
 import 'package:venom_config/venom_config.dart';
 
 Future<void> main() async {
-  // Initialize Flutter bindings first to ensure the binary messenger is ready
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize Venom Config System
   await VenomConfig().init();
 
-  // Initialize window manager for desktop controls
   await windowManager.ensureInitialized();
 
   WindowOptions windowOptions = const WindowOptions(
     size: Size(1000, 700),
     center: true,
-    titleBarStyle: TitleBarStyle.hidden, // يخفي شريط مدير النوافذ
+    titleBarStyle: TitleBarStyle.hidden,
   );
 
   windowManager.waitUntilReadyToShow(windowOptions, () async {
@@ -73,7 +70,7 @@ class _SettingsHomePageState extends State<SettingsHomePage> {
     WiFiSettingsPage(),
     BluetoothSettingsPage(),
     CompositorSettingsPage(),
-    AppsSettingsPage(), // Add new page
+    AppsSettingsPage(),
     DisplaySettingsPage(),
     AudioSettingsPage(),
     MouseSettingsPage(),
@@ -104,12 +101,10 @@ class _SettingsHomePageState extends State<SettingsHomePage> {
         decoration: const BoxDecoration(color: Color.fromARGB(100, 0, 0, 0)),
         child: Row(
           children: [
-            // Sidebar Navigation
             GlassmorphicContainer(
               width: 240,
               height: double.infinity,
               borderRadius: 0,
-              // This controls the black background border of the sidebar. Set to 0 to remove it.
               border: 0,
               blur: 0,
               borderGradient: const LinearGradient(
@@ -144,7 +139,6 @@ class _SettingsHomePageState extends State<SettingsHomePage> {
                 ],
               ),
             ),
-            // Content Area
             Expanded(child: _pages[_selectedIndex]),
           ],
         ),
@@ -162,7 +156,6 @@ class _SettingsHomePageState extends State<SettingsHomePage> {
           borderRadius: BorderRadius.circular(16),
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 300),
-            // curve: Curves.easeInOut,
             padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
             decoration: BoxDecoration(
               gradient: isSelected

@@ -22,7 +22,6 @@ class VaxpButton extends StatelessWidget {
   }
 }
 
-// زر ماك مع تأثير hover (لزر التكبير/إلغاء التكبير)
 class HoverVaxpButton extends StatefulWidget {
   final Color color;
   final VoidCallback onPressed;
