@@ -1,19 +1,10 @@
 import 'package:antidote/core/appbar.dart';
 import 'package:antidote/core/glassmorphic_container.dart';
-import 'package:antidote/screens/power_settings/power_settings_page.dart';
-import 'package:antidote/screens/system_settings/system_settings_page.dart';
-import 'package:antidote/screens/venom_effects/venom_effects.dart';
 import 'package:antidote/core/venom_layout.dart';
 import 'package:flutter/material.dart';
-import 'package:antidote/screens/display_settings/display_settings_page.dart';
-import 'package:antidote/screens/wifi_settings/wifi_settings_page.dart';
-import 'package:antidote/screens/bluetooth_settings/bluetooth_settings_page.dart';
-import 'package:antidote/screens/audio_settings/audio_settings_page.dart';
-import 'package:antidote/screens/mouse_settings/mouse_settings_page.dart';
-import 'package:antidote/screens/keyboard_settings/keyboard_settings_page.dart';
-import 'package:antidote/screens/apps_settings/apps_settings_page.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:venom_config/venom_config.dart';
+import 'package:antidote/core/config/settings_config.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -66,32 +57,6 @@ class SettingsHomePage extends StatefulWidget {
 class _SettingsHomePageState extends State<SettingsHomePage> {
   int _selectedIndex = 0;
 
-  final List<Widget> _pages = const [
-    WiFiSettingsPage(),
-    BluetoothSettingsPage(),
-    CompositorSettingsPage(),
-    AppsSettingsPage(),
-    DisplaySettingsPage(),
-    AudioSettingsPage(),
-    MouseSettingsPage(),
-    KeyboardSettingsPage(),
-    SystemSettingsPage(),
-    PowerSettingsPage(),
-  ];
-
-  final List<NavigationItem> _navItems = const [
-    NavigationItem(icon: Icons.wifi_rounded, label: 'Wi-Fi'),
-    NavigationItem(icon: Icons.bluetooth_rounded, label: 'Bluetooth'),
-    NavigationItem(icon: Icons.theater_comedy_sharp, label: 'Venom Effects'),
-    NavigationItem(icon: Icons.apps_rounded, label: 'Venom Theme'),
-    NavigationItem(icon: Icons.monitor_rounded, label: 'Display'),
-    NavigationItem(icon: Icons.volume_up_rounded, label: 'Sound'),
-    NavigationItem(icon: Icons.mouse_rounded, label: 'Mouse'),
-    NavigationItem(icon: Icons.keyboard_rounded, label: 'Keyboard'),
-    NavigationItem(icon: Icons.settings_rounded, label: 'System'),
-    NavigationItem(icon: Icons.power_settings_new_rounded, label: 'Power'),
-  ];
-
   @override
   Widget build(BuildContext context) {
     return VenomScaffold(
@@ -128,9 +93,9 @@ class _SettingsHomePageState extends State<SettingsHomePage> {
                   const SizedBox(height: 24),
                   Expanded(
                     child: ListView.builder(
-                      itemCount: _navItems.length,
+                      itemCount: settingsPages.length,
                       itemBuilder: (context, index) {
-                        final item = _navItems[index];
+                        final item = settingsPages[index];
                         final isSelected = _selectedIndex == index;
                         return _buildNavItem(item, index, isSelected);
                       },
@@ -139,14 +104,14 @@ class _SettingsHomePageState extends State<SettingsHomePage> {
                 ],
               ),
             ),
-            Expanded(child: _pages[_selectedIndex]),
+            Expanded(child: settingsPages[_selectedIndex].page),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildNavItem(NavigationItem item, int index, bool isSelected) {
+  Widget _buildNavItem(SettingsPageItem item, int index, bool isSelected) {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       child: Material(
@@ -168,19 +133,19 @@ class _SettingsHomePageState extends State<SettingsHomePage> {
                           64,
                           200,
                           255,
-                        ).withOpacity(0.35),
+                        ).withAlpha((255 * 0.35).round()),
                         const Color.fromARGB(
                           255,
                           100,
                           150,
                           255,
-                        ).withOpacity(0.25),
+                        ).withAlpha((255 * 0.25).round()),
                         const Color.fromARGB(
                           255,
                           80,
                           120,
                           220,
-                        ).withOpacity(0.15),
+                        ).withAlpha((255 * 0.15).round()),
                       ],
                       stops: const [0.0, 0.5, 1.0],
                     )
@@ -193,10 +158,13 @@ class _SettingsHomePageState extends State<SettingsHomePage> {
                         64,
                         200,
                         255,
-                      ).withOpacity(0.6),
+                      ).withAlpha((255 * 0.6).round()),
                       width: 1.5,
                     )
-                  : Border.all(color: Colors.white.withOpacity(0.1), width: 1),
+                  : Border.all(
+                      color: Colors.white.withAlpha((255 * 0.1).round()),
+                      width: 1,
+                    ),
             ),
             child: Row(
               children: [
@@ -204,7 +172,7 @@ class _SettingsHomePageState extends State<SettingsHomePage> {
                   item.icon,
                   color: isSelected
                       ? const Color.fromARGB(255, 120, 210, 255)
-                      : Colors.white.withOpacity(0.7),
+                      : Colors.white.withAlpha((255 * 0.7).round()),
                   size: 22,
                 ),
                 const SizedBox(width: 14),
@@ -213,7 +181,7 @@ class _SettingsHomePageState extends State<SettingsHomePage> {
                   style: TextStyle(
                     color: isSelected
                         ? Colors.white
-                        : Colors.white.withOpacity(0.8),
+                        : Colors.white.withAlpha((255 * 0.8).round()),
                     fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                     fontSize: 15,
                     letterSpacing: 0.3,
@@ -226,11 +194,4 @@ class _SettingsHomePageState extends State<SettingsHomePage> {
       ),
     );
   }
-}
-
-class NavigationItem {
-  final IconData icon;
-  final String label;
-
-  const NavigationItem({required this.icon, required this.label});
 }
