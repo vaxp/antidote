@@ -2,17 +2,19 @@ import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'keyboard_settings_event.dart';
 import 'keyboard_settings_state.dart';
+// ignore: unused_import
 import '../models/input_source.dart';
 import '../services/keyboard_service.dart';
 
 /// BLoC for managing keyboard settings state
-class KeyboardSettingsBloc extends Bloc<KeyboardSettingsEvent, KeyboardSettingsState> {
+class KeyboardSettingsBloc
+    extends Bloc<KeyboardSettingsEvent, KeyboardSettingsState> {
   final KeyboardService _keyboardService;
   Timer? _refreshTimer;
 
   KeyboardSettingsBloc({KeyboardService? keyboardService})
-      : _keyboardService = keyboardService ?? KeyboardService(),
-        super(const KeyboardSettingsState()) {
+    : _keyboardService = keyboardService ?? KeyboardService(),
+      super(const KeyboardSettingsState()) {
     on<LoadKeyboardSettings>(_onLoadKeyboardSettings);
     on<RefreshKeyboardSettings>(_onRefreshKeyboardSettings);
     on<AddInputSource>(_onAddInputSource);
@@ -45,22 +47,25 @@ class KeyboardSettingsBloc extends Bloc<KeyboardSettingsEvent, KeyboardSettingsS
       final results = await Future.wait([
         _keyboardService.getCurrentSources(),
         _keyboardService.getAvailableSources(),
-        _keyboardService.getInputSourceSwitching(),
       ]);
 
-      emit(state.copyWith(
-        status: KeyboardSettingsStatus.loaded,
-        currentSources: results[0] as List<InputSource>,
-        availableSources: results[1] as List<InputSource>,
-        inputSourceSwitching: results[2] as String,
-      ));
+      emit(
+        state.copyWith(
+          status: KeyboardSettingsStatus.loaded,
+          currentSources: results[0],
+          availableSources: results[1],
+          inputSourceSwitching: 'all-windows', // Default fallback
+        ),
+      );
 
       startPeriodicRefresh();
     } catch (e) {
-      emit(state.copyWith(
-        status: KeyboardSettingsStatus.error,
-        errorMessage: 'Failed to load keyboard settings: $e',
-      ));
+      emit(
+        state.copyWith(
+          status: KeyboardSettingsStatus.error,
+          errorMessage: 'Failed to load keyboard settings: $e',
+        ),
+      );
     }
   }
 
@@ -89,9 +94,7 @@ class KeyboardSettingsBloc extends Bloc<KeyboardSettingsEvent, KeyboardSettingsS
       final currentSources = await _keyboardService.getCurrentSources();
       emit(state.copyWith(currentSources: currentSources));
     } else {
-      emit(state.copyWith(
-        errorMessage: 'Failed to add input source',
-      ));
+      emit(state.copyWith(errorMessage: 'Failed to add input source'));
     }
   }
 
@@ -114,10 +117,8 @@ class KeyboardSettingsBloc extends Bloc<KeyboardSettingsEvent, KeyboardSettingsS
     SetInputSourceSwitching event,
     Emitter<KeyboardSettingsState> emit,
   ) async {
-    final success = await _keyboardService.setInputSourceSwitching(event.mode);
-    if (success) {
-      emit(state.copyWith(inputSourceSwitching: event.mode));
-    }
+    // Feature removed: input source switching per window is not supported by current daemon
+    emit(state.copyWith(inputSourceSwitching: event.mode));
   }
 
   @override
