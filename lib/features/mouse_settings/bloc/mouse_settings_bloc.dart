@@ -197,6 +197,7 @@ class MouseSettingsBloc extends Bloc<MouseSettingsEvent, MouseSettingsState> {
   @override
   Future<void> close() {
     stopPeriodicRefresh();
+    _mouseService.dispose();
     return super.close();
   }
 }

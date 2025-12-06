@@ -76,11 +76,11 @@ class VenomWindowButton extends StatefulWidget {
   final VoidCallback onPressed;
 
   const VenomWindowButton({
-    Key? key,
+    super.key,
     required this.color,
     required this.icon,
     required this.onPressed,
-  }) : super(key: key);
+  });
 
   @override
   State<VenomWindowButton> createState() => _VenomWindowButtonState();
@@ -108,6 +108,7 @@ class _VenomWindowButtonState extends State<VenomWindowButton> {
             boxShadow: _isHovered
                 ? [
                     BoxShadow(
+                      // ignore: deprecated_member_use
                       color: widget.color.withOpacity(0.8),
                       blurRadius: 8,
                       spreadRadius: 1,
@@ -122,6 +123,7 @@ class _VenomWindowButtonState extends State<VenomWindowButton> {
               child: Icon(
                 widget.icon,
                 size: 10,
+                // ignore: deprecated_member_use
                 color: Colors.black.withOpacity(0.6),
               ),
             ),
