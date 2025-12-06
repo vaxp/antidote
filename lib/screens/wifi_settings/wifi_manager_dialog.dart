@@ -326,12 +326,8 @@ class _WiFiManagerDialogState extends State<WiFiManagerDialog> {
               'auth-alg': const DBusString('open'),
               'psk': DBusString(password),
             },
-            'ipv4': {
-              'method': const DBusString('auto'),
-            },
-            'ipv6': {
-              'method': const DBusString('auto'),
-            },
+            'ipv4': {'method': const DBusString('auto')},
+            'ipv6': {'method': const DBusString('auto')},
           };
 
           // Get the Settings object first
@@ -344,16 +340,16 @@ class _WiFiManagerDialogState extends State<WiFiManagerDialog> {
           final connectionData = DBusDict(
             DBusSignature('s'),
             DBusSignature('a{sv}'),
-            conn.map((key, value) => MapEntry(
-              DBusString(key),
-              DBusDict(
-                DBusSignature('s'),
-                DBusSignature('v'),
-                value.map(
-                  (k, v) => MapEntry(DBusString(k), DBusVariant(v)),
+            conn.map(
+              (key, value) => MapEntry(
+                DBusString(key),
+                DBusDict(
+                  DBusSignature('s'),
+                  DBusSignature('v'),
+                  value.map((k, v) => MapEntry(DBusString(k), DBusVariant(v))),
                 ),
               ),
-            )),
+            ),
           );
 
           await nmSettings.callMethod(
@@ -371,7 +367,7 @@ class _WiFiManagerDialogState extends State<WiFiManagerDialog> {
         name: 'org.freedesktop.NetworkManager',
         path: DBusObjectPath('/org/freedesktop/NetworkManager/Settings'),
       );
-      
+
       final conns = await settings.callMethod(
         'org.freedesktop.NetworkManager.Settings',
         'ListConnections',
@@ -580,9 +576,7 @@ class _WiFiManagerDialogState extends State<WiFiManagerDialog> {
                   const SizedBox(
                     width: 20,
                     height: 20,
-                    child: CupertinoActivityIndicator(
-                      color: Colors.tealAccent,
-                    ),
+                    child: CupertinoActivityIndicator(color: Colors.tealAccent),
                   )
                 else
                   IconButton(
@@ -599,7 +593,7 @@ class _WiFiManagerDialogState extends State<WiFiManagerDialog> {
                 decoration: BoxDecoration(
                   // ignore: deprecated_member_use
                   color: Colors.red.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(8),
                   // ignore: deprecated_member_use
                   border: Border.all(color: Colors.red.withOpacity(0.2)),
                 ),
@@ -627,9 +621,7 @@ class _WiFiManagerDialogState extends State<WiFiManagerDialog> {
               const Center(
                 child: Padding(
                   padding: EdgeInsets.all(24),
-                  child: CupertinoActivityIndicator(
-                    color: Colors.tealAccent,
-                  ),
+                  child: CupertinoActivityIndicator(color: Colors.tealAccent),
                 ),
               )
             else if (_networks.isEmpty)

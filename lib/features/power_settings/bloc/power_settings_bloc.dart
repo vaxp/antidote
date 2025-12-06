@@ -7,7 +7,7 @@ import '../services/power_service.dart';
 /// BLoC for managing power settings state
 class PowerSettingsBloc extends Bloc<PowerSettingsEvent, PowerSettingsState> {
   final PowerService _powerService;
-  Timer? _refreshTimer;
+  StreamSubscription? _batterySubscription;
 
   PowerSettingsBloc({PowerService? powerService})
     : _powerService = powerService ?? PowerService(),
@@ -18,46 +18,42 @@ class PowerSettingsBloc extends Bloc<PowerSettingsEvent, PowerSettingsState> {
     on<PerformPowerAction>(_onPerformPowerAction);
   }
 
-  /// Starts the periodic refresh timer
-  void startPeriodicRefresh() {
-    _refreshTimer?.cancel();
-    _refreshTimer = Timer.periodic(
-      const Duration(seconds: 2),
-      (_) => add(const RefreshPowerInfo()),
-    );
-  }
-
-  /// Stops the periodic refresh timer
-  void stopPeriodicRefresh() {
-    _refreshTimer?.cancel();
-    _refreshTimer = null;
-  }
-
   Future<void> _onLoadPowerSettings(
     LoadPowerSettings event,
     Emitter<PowerSettingsState> emit,
   ) async {
     emit(state.copyWith(status: PowerSettingsStatus.loading));
 
-    try {
-      final results = await Future.wait([
-        _powerService.getBatteryInfo(),
-        _powerService.getPowerProfile(),
-      ]);
+    final connected = await _powerService.connect();
+    if (!connected) {
+      emit(
+        state.copyWith(
+          status: PowerSettingsStatus.error,
+          errorMessage: 'Failed to connect to Power Daemon',
+        ),
+      );
+      return;
+    }
 
-      final batteryInfo = results[0] as Map<String, dynamic>;
-      final profile = results[1] as String;
+    // Subscribe to battery updates
+    _batterySubscription?.cancel();
+    _batterySubscription = _powerService.batteryChangedStream.listen((data) {
+      add(const RefreshPowerInfo());
+    });
+
+    try {
+      final batteryInfo = await _powerService.getBatteryInfo();
+
+      // Note: Power Profiles are not yet supported by the daemon, defaulting to 'balanced'
 
       emit(
         state.copyWith(
           status: PowerSettingsStatus.loaded,
-          batteryLevel: batteryInfo['batteryLevel'] as double,
-          isCharging: batteryInfo['isCharging'] as bool,
-          activePowerProfile: profile,
+          batteryLevel: batteryInfo['percentage'] as double,
+          isCharging: batteryInfo['charging'] as bool,
+          activePowerProfile: 'balanced',
         ),
       );
-
-      startPeriodicRefresh();
     } catch (e) {
       emit(
         state.copyWith(
@@ -73,47 +69,51 @@ class PowerSettingsBloc extends Bloc<PowerSettingsEvent, PowerSettingsState> {
     Emitter<PowerSettingsState> emit,
   ) async {
     try {
-      final results = await Future.wait([
-        _powerService.getBatteryInfo(),
-        _powerService.getPowerProfile(),
-      ]);
-
-      final batteryInfo = results[0] as Map<String, dynamic>;
-      final profile = results[1] as String;
-
+      final batteryInfo = await _powerService.getBatteryInfo();
       emit(
         state.copyWith(
-          batteryLevel: batteryInfo['batteryLevel'] as double,
-          isCharging: batteryInfo['isCharging'] as bool,
-          activePowerProfile: profile,
+          batteryLevel: batteryInfo['percentage'] as double,
+          isCharging: batteryInfo['charging'] as bool,
         ),
       );
-    } catch (e) {
-      // Silent refresh failure
-    }
+    } catch (_) {}
   }
 
   Future<void> _onSetPowerProfile(
     SetPowerProfile event,
     Emitter<PowerSettingsState> emit,
   ) async {
-    final success = await _powerService.setPowerProfile(event.profile);
-    if (success) {
-      emit(state.copyWith(activePowerProfile: event.profile));
-    }
+    // Placeholder: Power profiles not implemented in daemon yet
+    emit(state.copyWith(activePowerProfile: event.profile));
   }
 
   Future<void> _onPerformPowerAction(
     PerformPowerAction event,
     Emitter<PowerSettingsState> emit,
   ) async {
-    await _powerService.performPowerAction(event.action);
+    switch (event.action) {
+      case 'shutdown':
+        await _powerService.shutdown();
+        break;
+      case 'reboot':
+        await _powerService.reboot();
+        break;
+      case 'suspend':
+        await _powerService.suspend();
+        break;
+      case 'logout':
+        await _powerService.logout();
+        break;
+      case 'lock':
+        await _powerService.lockScreen();
+        break;
+    }
   }
 
   @override
   Future<void> close() {
-    stopPeriodicRefresh();
-    _powerService.dispose();
+    _batterySubscription?.cancel();
+    _powerService.disconnect();
     return super.close();
   }
 }

@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:dbus/dbus.dart';
 import 'package:flutter/foundation.dart';
 import '../models/display_resolution.dart';
+import '../../power_settings/services/power_service.dart';
 
 /// Service class that handles all display-related operations
 class DisplayService {
@@ -333,44 +334,27 @@ class DisplayService {
 
   /// Initialize brightness and detect method
   Future<Map<String, dynamic>> initBrightness() async {
-    // Try xrandr first
+    final powerService = PowerService();
     try {
-      final xrandrCheck = await Process.run('xrandr', ['--version']);
-      if (xrandrCheck.exitCode == 0) {
-        final displayName = await getDisplayName();
-        if (displayName != null) {
-          return {
-            'brightness': 100.0,
-            'maxBrightness': 100.0,
-            'brightnessSupported': true,
-            'brightnessMethod': 'xrandr',
-          };
-        }
-      }
-    } catch (e) {
-      debugPrint('xrandr brightness failed: $e');
-    }
+      final connected = await powerService.connect();
+      if (connected) {
+        final current = await powerService.getBrightness();
+        final max = await powerService.getMaxBrightness();
+        await powerService.disconnect();
 
-    // Try brightnessctl
-    try {
-      final maxResult = await Process.run('brightnessctl', ['m']);
-      final currentResult = await Process.run('brightnessctl', ['g']);
-      if (maxResult.exitCode == 0 && currentResult.exitCode == 0) {
-        final max =
-            double.tryParse(maxResult.stdout.toString().trim()) ?? 100.0;
-        final current =
-            double.tryParse(currentResult.stdout.toString().trim()) ?? 100.0;
         if (max > 0) {
           return {
             'brightness': (current / max * 100).clamp(0.0, 100.0),
-            'maxBrightness': max,
+            'maxBrightness': max.toDouble(),
             'brightnessSupported': true,
-            'brightnessMethod': 'brightnessctl',
+            'brightnessMethod': 'venom_power',
           };
         }
       }
     } catch (e) {
-      debugPrint('brightnessctl failed: $e');
+      debugPrint('Venom Power brightness failed: $e');
+    } finally {
+      await powerService.disconnect();
     }
 
     return {
@@ -387,29 +371,20 @@ class DisplayService {
     String method,
     double maxBrightness,
   ) async {
-    try {
-      if (method == 'xrandr') {
-        final displayName = await getDisplayName();
-        if (displayName != null) {
-          final brightnessValue = (value / 100.0).clamp(0.0, 1.0);
-          final result = await Process.run('xrandr', [
-            '--output',
-            displayName,
-            '--brightness',
-            brightnessValue.toStringAsFixed(2),
-          ]);
-          return result.exitCode == 0;
+    if (method == 'venom_power') {
+      final powerService = PowerService();
+      try {
+        final connected = await powerService.connect();
+        if (connected) {
+          final absoluteValue = (value / 100.0 * maxBrightness).round();
+          final result = await powerService.setBrightness(absoluteValue);
+          return result;
         }
-      } else if (method == 'brightnessctl') {
-        final absoluteValue = (value / 100.0 * maxBrightness).round();
-        final result = await Process.run('brightnessctl', [
-          's',
-          absoluteValue.toString(),
-        ]);
-        return result.exitCode == 0;
+      } catch (e) {
+        debugPrint('Set brightness error: $e');
+      } finally {
+        await powerService.disconnect();
       }
-    } catch (e) {
-      debugPrint('Set brightness error: $e');
     }
     return false;
   }

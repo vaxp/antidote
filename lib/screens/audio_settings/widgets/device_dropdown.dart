@@ -56,7 +56,7 @@ class DeviceDropdown extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           decoration: BoxDecoration(
             color: Colors.white.withOpacity(0.05),
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(8),
             border: Border.all(color: Colors.white.withOpacity(0.1)),
           ),
           child: DropdownButton<AudioDevice>(

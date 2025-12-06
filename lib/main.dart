@@ -153,7 +153,7 @@ class _SettingsHomePageState extends State<SettingsHomePage> {
         color: Colors.transparent,
         child: InkWell(
           onTap: () => setState(() => _selectedIndex = index),
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(8),
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 300),
             padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
@@ -185,7 +185,7 @@ class _SettingsHomePageState extends State<SettingsHomePage> {
                       stops: const [0.0, 0.5, 1.0],
                     )
                   : null,
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(8),
               border: isSelected
                   ? Border.all(
                       color: const Color.fromARGB(

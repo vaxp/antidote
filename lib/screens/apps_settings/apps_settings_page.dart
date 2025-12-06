@@ -1,7 +1,9 @@
-import 'package:antidote/core/glassmorphic_container.dart';
 import 'package:flutter/material.dart';
 import 'package:venom_config/venom_config.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
+import 'package:antidote/screens/apps_settings/widgets/apps_settings_header.dart';
+import 'package:antidote/screens/apps_settings/widgets/system_theme_color_section.dart';
+import 'package:antidote/screens/apps_settings/widgets/system_text_color_section.dart';
 
 class AppsSettingsPage extends StatefulWidget {
   const AppsSettingsPage({super.key});
@@ -47,297 +49,42 @@ class _AppsSettingsPageState extends State<AppsSettingsPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              children: [
-                const Text(
-                  'Applications Control',
-                  style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
-                const Spacer(),
-                ElevatedButton.icon(
-                  onPressed: _resetToDefaults,
-                  icon: const Icon(Icons.restore, color: Colors.white),
-                  label: const Text("Reset to Default"),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.redAccent.withOpacity(0.8),
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
-                    ),
-                  ),
-                ),
-              ],
-            ),
+            AppsSettingsHeader(onReset: _resetToDefaults),
             const SizedBox(height: 32),
 
             // Advanced Color Control
-            _buildSectionHeader('System Theme Color'),
-            const SizedBox(height: 16),
-            GlassmorphicContainer(
-              width: double.infinity,
-              height: 400, // Increased height for more controls
-              borderRadius: 16,
-              blur: 10,
-              border: 1,
-              linearGradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  // Colors.white.withOpacity(0.1),
-                  // Colors.white.withOpacity(0.05),
-                ],
-              ),
-              borderGradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  // Colors.white.withOpacity(0.5),
-                  // Colors.white.withOpacity(0.1),
-                ],
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // 1. Preset Colors Grid
-                    const Text(
-                      'Preset Colors',
-                      style: TextStyle(color: Colors.white70, fontSize: 14),
-                    ),
-                    const SizedBox(height: 10),
-                    Wrap(
-                      spacing: 10,
-                      runSpacing: 10,
-                      children: _presetColors
-                          .map((color) => _buildColorOption(color))
-                          .toList(),
-                    ),
-
-                    const SizedBox(height: 24),
-                    const Divider(color: Colors.white24),
-                    const SizedBox(height: 16),
-
-                    // 2. Custom Color Picker Button
-                    Row(
-                      children: [
-                        const Text(
-                          'Custom Color:',
-                          style: TextStyle(color: Colors.white70, fontSize: 16),
-                        ),
-                        const SizedBox(width: 16),
-                        ElevatedButton.icon(
-                          icon: const Icon(Icons.color_lens),
-                          label: const Text("Pick Custom Color"),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: _currentColor,
-                            foregroundColor:
-                                _currentColor.computeLuminance() > 0.5
-                                ? Colors.black
-                                : Colors.white,
-                          ),
-                          onPressed: () => _showColorPicker(context),
-                        ),
-                      ],
-                    ),
-
-                    const SizedBox(height: 24),
-
-                    // 3. Opacity Slider
-                    const Text(
-                      'Opacity / Transparency',
-                      style: TextStyle(color: Colors.white70, fontSize: 14),
-                    ),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Slider(
-                            value: _opacity,
-                            min: 0.0,
-                            max: 1.0,
-                            divisions: 100,
-                            label: '${(_opacity * 100).round()}%',
-                            onChanged: (value) {
-                              setState(() {
-                                _opacity = value;
-                                _updateConfig(
-                                  _currentColor.withOpacity(_opacity),
-                                );
-                              });
-                            },
-                          ),
-                        ),
-                        Text(
-                          '${(_opacity * 100).round()}%',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
+            SystemThemeColorSection(
+              currentColor: _currentColor,
+              opacity: _opacity,
+              presetColors: _presetColors,
+              onColorChanged: (color) {
+                setState(() {
+                  _currentColor = color;
+                  _updateConfig(color.withOpacity(_opacity));
+                });
+              },
+              onOpacityChanged: (value) {
+                setState(() {
+                  _opacity = value;
+                  _updateConfig(_currentColor.withOpacity(_opacity));
+                });
+              },
+              onPickCustomColor: () => _showColorPicker(context),
             ),
 
             const SizedBox(height: 32),
 
             // Text Color Section
-            _buildSectionHeader('System Text Color'),
-            const SizedBox(height: 16),
-            GlassmorphicContainer(
-              width: double.infinity,
-              height: 300, // Adjusted height
-              borderRadius: 16,
-              blur: 10,
-              border: 1,
-              linearGradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  // Colors.white.withOpacity(0.1),
-                  // Colors.white.withOpacity(0.05),
-                ],
-              ),
-              borderGradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  // Colors.white.withOpacity(0.5),
-                  // Colors.white.withOpacity(0.1),
-                ],
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // 1. Preset Colors Grid
-                    const Text(
-                      'Text Color Presets',
-                      style: TextStyle(color: Colors.white70, fontSize: 14),
-                    ),
-                    const SizedBox(height: 10),
-                    Wrap(
-                      spacing: 10,
-                      runSpacing: 10,
-                      children: _presetColors
-                          .map((color) => _buildTextColorOption(color))
-                          .toList(),
-                    ),
-
-                    const SizedBox(height: 24),
-                    const Divider(color: Colors.white24),
-                    const SizedBox(height: 16),
-
-                    // 2. Custom Color Picker Button
-                    Row(
-                      children: [
-                        const Text(
-                          'Custom Text Color:',
-                          style: TextStyle(color: Colors.white70, fontSize: 16),
-                        ),
-                        const SizedBox(width: 16),
-                        ElevatedButton.icon(
-                          icon: const Icon(Icons.color_lens),
-                          label: const Text("Pick Custom Color"),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: _currentTextColor,
-                            foregroundColor:
-                                _currentTextColor.computeLuminance() > 0.5
-                                ? Colors.black
-                                : Colors.white,
-                          ),
-                          onPressed: () => _showTextColorPicker(context),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSectionHeader(String title) {
-    return Text(
-      title,
-      style: const TextStyle(
-        fontSize: 20,
-        fontWeight: FontWeight.w600,
-        color: Colors.white,
-      ),
-    );
-  }
-
-  Widget _buildColorOption(Color color) {
-    return InkWell(
-      onTap: () {
-        setState(() {
-          _currentColor = color;
-          _updateConfig(color.withOpacity(_opacity));
-        });
-      },
-      borderRadius: BorderRadius.circular(20),
-      child: Container(
-        width: 36,
-        height: 36,
-        decoration: BoxDecoration(
-          color: color,
-          shape: BoxShape.circle,
-          border: Border.all(
-            color: _currentColor.value == color.value
-                ? Colors.white
-                : Colors.transparent,
-            width: 3,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.2),
-              blurRadius: 4,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTextColorOption(Color color) {
-    return InkWell(
-      onTap: () {
-        setState(() {
-          _currentTextColor = color;
-          _updateTextConfig(color);
-        });
-      },
-      borderRadius: BorderRadius.circular(20),
-      child: Container(
-        width: 36,
-        height: 36,
-        decoration: BoxDecoration(
-          color: color,
-          shape: BoxShape.circle,
-          border: Border.all(
-            color: _currentTextColor.value == color.value
-                ? Colors.white
-                : Colors.transparent,
-            width: 3,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.2),
-              blurRadius: 4,
-              offset: const Offset(0, 2),
+            SystemTextColorSection(
+              currentTextColor: _currentTextColor,
+              presetColors: _presetColors,
+              onColorChanged: (color) {
+                setState(() {
+                  _currentTextColor = color;
+                  _updateTextConfig(color);
+                });
+              },
+              onPickCustomColor: () => _showTextColorPicker(context),
             ),
           ],
         ),

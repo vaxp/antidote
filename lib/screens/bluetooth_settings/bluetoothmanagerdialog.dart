@@ -1,4 +1,4 @@
-import 'dart:async' ;
+import 'dart:async';
 import 'package:dbus/dbus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
@@ -311,7 +311,7 @@ class _BluetoothManagerDialogState extends State<BluetoothManagerDialog> {
   Widget build(BuildContext context) {
     return Dialog(
       backgroundColor: const Color.fromARGB(0, 0, 0, 0),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       child: Container(
         width: 450,
         height: 600,
@@ -390,7 +390,7 @@ class _BluetoothManagerDialogState extends State<BluetoothManagerDialog> {
                                 ? Colors.blueAccent.withOpacity(0.15)
                                 // ignore: deprecated_member_use
                                 : Colors.white.withOpacity(0.05),
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(8),
                           ),
                           child: ListTile(
                             leading: Icon(
