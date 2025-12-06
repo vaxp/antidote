@@ -4,10 +4,11 @@ import 'power_settings_event.dart';
 import 'power_settings_state.dart';
 import '../services/power_service.dart';
 
-
 class PowerSettingsBloc extends Bloc<PowerSettingsEvent, PowerSettingsState> {
   final PowerService _powerService;
   StreamSubscription? _batterySubscription;
+  StreamSubscription? _timeoutsSubscription;
+  StreamSubscription? _profileSubscription;
 
   PowerSettingsBloc({PowerService? powerService})
     : _powerService = powerService ?? PowerService(),
@@ -15,7 +16,10 @@ class PowerSettingsBloc extends Bloc<PowerSettingsEvent, PowerSettingsState> {
     on<LoadPowerSettings>(_onLoadPowerSettings);
     on<RefreshPowerInfo>(_onRefreshPowerInfo);
     on<SetPowerProfile>(_onSetPowerProfile);
+    on<ProfileChangedExternally>(_onProfileChangedExternally);
     on<PerformPowerAction>(_onPerformPowerAction);
+    on<SetIdleTimeouts>(_onSetIdleTimeouts);
+    on<RefreshIdleTimeouts>(_onRefreshIdleTimeouts);
   }
 
   Future<void> _onLoadPowerSettings(
@@ -35,23 +39,37 @@ class PowerSettingsBloc extends Bloc<PowerSettingsEvent, PowerSettingsState> {
       return;
     }
 
-    
     _batterySubscription?.cancel();
     _batterySubscription = _powerService.batteryChangedStream.listen((data) {
       add(const RefreshPowerInfo());
     });
 
+    _timeoutsSubscription?.cancel();
+    _timeoutsSubscription = _powerService.idleTimeoutsChangedStream.listen((
+      data,
+    ) {
+      add(const RefreshIdleTimeouts());
+    });
+
+    _profileSubscription?.cancel();
+    _profileSubscription = _powerService.profileChangedStream.listen((profile) {
+      add(ProfileChangedExternally(profile));
+    });
+
     try {
       final batteryInfo = await _powerService.getBatteryInfo();
-
-      
+      final timeouts = await _powerService.getIdleTimeouts();
+      final activeProfile = await _powerService.getActiveProfile();
 
       emit(
         state.copyWith(
           status: PowerSettingsStatus.loaded,
           batteryLevel: batteryInfo['percentage'] as double,
           isCharging: batteryInfo['charging'] as bool,
-          activePowerProfile: 'balanced',
+          activePowerProfile: activeProfile,
+          dimTimeout: timeouts['dim'],
+          blankTimeout: timeouts['blank'],
+          suspendTimeout: timeouts['suspend'],
         ),
       );
     } catch (e) {
@@ -79,11 +97,34 @@ class PowerSettingsBloc extends Bloc<PowerSettingsEvent, PowerSettingsState> {
     } catch (_) {}
   }
 
+  Future<void> _onRefreshIdleTimeouts(
+    RefreshIdleTimeouts event,
+    Emitter<PowerSettingsState> emit,
+  ) async {
+    try {
+      final timeouts = await _powerService.getIdleTimeouts();
+      emit(
+        state.copyWith(
+          dimTimeout: timeouts['dim'],
+          blankTimeout: timeouts['blank'],
+          suspendTimeout: timeouts['suspend'],
+        ),
+      );
+    } catch (_) {}
+  }
+
   Future<void> _onSetPowerProfile(
     SetPowerProfile event,
     Emitter<PowerSettingsState> emit,
   ) async {
-    
+    emit(state.copyWith(activePowerProfile: event.profile));
+    await _powerService.setActiveProfile(event.profile);
+  }
+
+  Future<void> _onProfileChangedExternally(
+    ProfileChangedExternally event,
+    Emitter<PowerSettingsState> emit,
+  ) async {
     emit(state.copyWith(activePowerProfile: event.profile));
   }
 
@@ -110,9 +151,26 @@ class PowerSettingsBloc extends Bloc<PowerSettingsEvent, PowerSettingsState> {
     }
   }
 
+  Future<void> _onSetIdleTimeouts(
+    SetIdleTimeouts event,
+    Emitter<PowerSettingsState> emit,
+  ) async {
+    // Optimistic update
+    emit(
+      state.copyWith(
+        dimTimeout: event.dim,
+        blankTimeout: event.blank,
+        suspendTimeout: event.suspend,
+      ),
+    );
+    await _powerService.setIdleTimeouts(event.dim, event.blank, event.suspend);
+  }
+
   @override
   Future<void> close() {
     _batterySubscription?.cancel();
+    _timeoutsSubscription?.cancel();
+    _profileSubscription?.cancel();
     _powerService.disconnect();
     return super.close();
   }

@@ -40,6 +40,7 @@ class VenomLabApp extends StatelessWidget {
         brightness: Brightness.dark,
         canvasColor: Colors.transparent,
         cardColor: Colors.transparent,
+        // ignore: deprecated_member_use
         dialogBackgroundColor: Colors.transparent,
       ),
       home: const SettingsHomePage(),

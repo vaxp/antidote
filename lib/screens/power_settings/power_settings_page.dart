@@ -3,8 +3,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:antidote/features/power_settings/power_settings.dart';
 import 'package:antidote/screens/power_settings/widgets/battery_tile.dart';
 import 'package:antidote/screens/power_settings/widgets/power_profiles_section.dart';
+import 'package:antidote/screens/power_settings/widgets/power_timers_section.dart';
 import 'package:antidote/screens/power_settings/widgets/system_actions_section.dart';
-
 
 class PowerSettingsPage extends StatelessWidget {
   const PowerSettingsPage({super.key});
@@ -17,7 +17,6 @@ class PowerSettingsPage extends StatelessWidget {
     );
   }
 }
-
 
 class PowerSettingsView extends StatelessWidget {
   const PowerSettingsView({super.key});
@@ -58,6 +57,8 @@ class PowerSettingsView extends StatelessWidget {
             const BatteryTile(),
             const SizedBox(height: 32),
             const PowerProfilesSection(),
+            const SizedBox(height: 32),
+            const PowerTimersSection(),
             const SizedBox(height: 32),
             const Divider(color: Colors.white10, height: 1),
             const SizedBox(height: 24),
