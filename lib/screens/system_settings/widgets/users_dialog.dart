@@ -32,7 +32,7 @@ class _UsersDialogState extends State<UsersDialog> {
             final home = parts[5];
             final shell = parts[6];
 
-            // Filter system users (UID >= 1000 typically for regular users)
+            
             final uidInt = int.tryParse(uid) ?? 0;
             if (uidInt >= 1000 &&
                 (shell.contains('bash') ||
@@ -51,7 +51,7 @@ class _UsersDialogState extends State<UsersDialog> {
   }
 
   Future<void> _changePassword(String username) async {
-    // Prompt for admin password
+    
     final adminPassword = await _showPasswordDialog(
       title: 'Enter Administrator Password',
       hint: 'Password',
@@ -61,7 +61,7 @@ class _UsersDialogState extends State<UsersDialog> {
       return;
     }
 
-    // Prompt for new password
+    
     final newPassword = await _showPasswordDialog(
       title: 'Enter New Password for $username',
       hint: 'New Password',
@@ -73,12 +73,12 @@ class _UsersDialogState extends State<UsersDialog> {
     }
 
     try {
-      // Use chpasswd which is designed for non-interactive password changes
-      // Format: username:password
+      
+      
       final passwordLine = '$username:$newPassword';
 
-      // Use bash -c to properly pipe the password line to chpasswd
-      // First pipe admin password to sudo, then pipe password line to chpasswd
+      
+      
       final result = await Process.run('bash', [
         '-c',
         r'printf "%s\n" "$1" | sudo -S bash -c "printf \"%s\n\" \"$2\" | chpasswd"',
@@ -116,7 +116,7 @@ class _UsersDialogState extends State<UsersDialog> {
   }
 
   Future<void> _createNewUser() async {
-    // Prompt for admin password
+    
     final adminPassword = await _showPasswordDialog(
       title: 'Enter Administrator Password',
       hint: 'Password',
@@ -126,7 +126,7 @@ class _UsersDialogState extends State<UsersDialog> {
       return;
     }
 
-    // Prompt for new username
+    
     final username = await _showTextInputDialog(
       title: 'Create New User',
       hint: 'Username',
@@ -136,7 +136,7 @@ class _UsersDialogState extends State<UsersDialog> {
       return;
     }
 
-    // Prompt for new password
+    
     final password = await _showPasswordDialog(
       title: 'Enter Password for $username',
       hint: 'Password',
@@ -148,7 +148,7 @@ class _UsersDialogState extends State<UsersDialog> {
     }
 
     try {
-      // Create user with sudo
+      
       final createResult = await Process.run('bash', [
         '-c',
         r'printf "%s\n" "$1" | sudo -S useradd -m -s /bin/bash "$2"',
@@ -169,7 +169,7 @@ class _UsersDialogState extends State<UsersDialog> {
         return;
       }
 
-      // Set password using chpasswd
+      
       final passwordLine = '$username:$password';
       final passwdResult = await Process.run('bash', [
         '-c',
@@ -187,7 +187,7 @@ class _UsersDialogState extends State<UsersDialog> {
               backgroundColor: Colors.green,
             ),
           );
-          // Reload users list
+          
           await _loadUsers();
         }
       } else {

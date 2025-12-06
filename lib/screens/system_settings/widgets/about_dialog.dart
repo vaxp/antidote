@@ -24,20 +24,20 @@ class _SystemAboutDialogState extends State<SystemAboutDialog> {
 
   Future<void> _loadSystemInfo() async {
     try {
-      // Hostname
+      
       final hostnameResult = await Process.run('hostname', []);
       if (hostnameResult.exitCode == 0) {
         setState(() => _hostname = hostnameResult.stdout.toString().trim());
       }
 
-      // OS Version
+      
       final osResult = await Process.run('lsb_release', ['-d']);
       if (osResult.exitCode == 0) {
         setState(
           () => _osVersion = osResult.stdout.toString().split(':')[1].trim(),
         );
       } else {
-        // Fallback
+        
         final osRelease = await Process.run('cat', ['/etc/os-release']);
         if (osRelease.exitCode == 0) {
           final lines = osRelease.stdout.toString().split('\n');
@@ -52,13 +52,13 @@ class _SystemAboutDialogState extends State<SystemAboutDialog> {
         }
       }
 
-      // Kernel
+      
       final kernelResult = await Process.run('uname', ['-r']);
       if (kernelResult.exitCode == 0) {
         setState(() => _kernel = kernelResult.stdout.toString().trim());
       }
 
-      // CPU
+      
       final cpuResult = await Process.run('lscpu', []);
       if (cpuResult.exitCode == 0) {
         final lines = cpuResult.stdout.toString().split('\n');
@@ -70,7 +70,7 @@ class _SystemAboutDialogState extends State<SystemAboutDialog> {
         }
       }
 
-      // Memory
+      
       final memResult = await Process.run('free', ['-h']);
       if (memResult.exitCode == 0) {
         final lines = memResult.stdout.toString().split('\n');
@@ -82,7 +82,7 @@ class _SystemAboutDialogState extends State<SystemAboutDialog> {
         }
       }
 
-      // Disk
+      
       final diskResult = await Process.run('df', ['-h', '/']);
       if (diskResult.exitCode == 0) {
         final lines = diskResult.stdout.toString().split('\n');

@@ -5,7 +5,7 @@ import 'widgets/output_section.dart';
 import 'widgets/input_section.dart';
 import 'widgets/sounds_section.dart';
 
-/// Audio Settings Page using BLoC pattern
+
 class AudioSettingsPage extends StatelessWidget {
   const AudioSettingsPage({super.key});
 
@@ -18,7 +18,7 @@ class AudioSettingsPage extends StatelessWidget {
   }
 }
 
-/// The main view widget that builds the UI
+
 class AudioSettingsView extends StatelessWidget {
   const AudioSettingsView({super.key});
 

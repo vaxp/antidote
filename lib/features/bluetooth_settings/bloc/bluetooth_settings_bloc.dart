@@ -4,7 +4,7 @@ import 'bluetooth_settings_event.dart';
 import 'bluetooth_settings_state.dart';
 import '../services/bluetooth_service.dart';
 
-/// BLoC for managing bluetooth settings state
+
 class BluetoothSettingsBloc
     extends Bloc<BluetoothSettingsEvent, BluetoothSettingsState> {
   final BluetoothService _bluetoothService;
@@ -23,7 +23,7 @@ class BluetoothSettingsBloc
     on<DevicesUpdated>(_onDevicesUpdated);
     on<BluetoothStatusChanged>(_onBluetoothStatusChanged);
 
-    // Set up callback for device changes
+    
     _bluetoothService.onDevicesChanged = (devices) {
       add(DevicesUpdated(devices));
     };
@@ -54,7 +54,7 @@ class BluetoothSettingsBloc
         ),
       );
 
-      // Auto-start scanning if bluetooth is enabled
+      
       if (bluetoothEnabled && adapterPath != null) {
         add(const StartBluetoothScan());
       }
@@ -94,11 +94,11 @@ class BluetoothSettingsBloc
 
     final success = await _bluetoothService.startScan(state.adapterPath!);
     if (success) {
-      // Fetch initial devices
+      
       final devices = await _bluetoothService.fetchDevices();
       emit(state.copyWith(devices: devices));
 
-      // Start periodic refresh
+      
       _scanTimer?.cancel();
       _scanTimer = Timer.periodic(
         const Duration(seconds: 2),
@@ -144,7 +144,7 @@ class BluetoothSettingsBloc
       emit(state.copyWith(errorMessage: 'Failed to connect device'));
     }
 
-    // Refresh and resume scanning
+    
     add(const RefreshDevices());
     add(const StartBluetoothScan());
   }

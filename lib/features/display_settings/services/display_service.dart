@@ -4,7 +4,7 @@ import 'package:flutter/foundation.dart';
 import '../models/display_resolution.dart';
 import '../../power_settings/services/power_service.dart';
 
-/// Service class that handles all display-related operations
+
 class DisplayService {
   DBusClient? _sysbus;
   String? _cachedDisplayName;
@@ -14,9 +14,9 @@ class DisplayService {
     return _sysbus!;
   }
 
-  // ========== Display Server Detection ==========
+  
 
-  /// Detect the display server (X11 or Wayland)
+  
   Future<String> detectDisplayServer() async {
     try {
       final waylandDisplay = Platform.environment['WAYLAND_DISPLAY'];
@@ -43,9 +43,9 @@ class DisplayService {
     }
   }
 
-  // ========== Display Name ==========
+  
 
-  /// Get display name for xrandr commands
+  
   Future<String?> getDisplayName() async {
     if (_cachedDisplayName != null) return _cachedDisplayName;
 
@@ -69,9 +69,9 @@ class DisplayService {
     return null;
   }
 
-  // ========== Resolution ==========
+  
 
-  /// Get X11 available resolutions
+  
   Future<List<DisplayResolution>> getX11AvailableResolutions() async {
     final List<DisplayResolution> resolutions = [];
     try {
@@ -129,7 +129,7 @@ class DisplayService {
     return resolutions;
   }
 
-  /// Get current X11 resolution
+  
   Future<Map<String, dynamic>> getX11DisplayInfo() async {
     try {
       final result = await Process.run('xrandr', ['--current']);
@@ -171,7 +171,7 @@ class DisplayService {
     return {};
   }
 
-  /// Get X11 available refresh rates
+  
   Future<List<String>> getX11AvailableRefreshRates(
     int width,
     int height,
@@ -201,7 +201,7 @@ class DisplayService {
     return rates;
   }
 
-  /// Set X11 resolution
+  
   Future<bool> setResolution(DisplayResolution resolution) async {
     try {
       final displayName = await getDisplayName();
@@ -220,7 +220,7 @@ class DisplayService {
     }
   }
 
-  /// Set refresh rate
+  
   Future<bool> setRefreshRate(String refreshRate) async {
     try {
       final displayName = await getDisplayName();
@@ -240,9 +240,9 @@ class DisplayService {
     }
   }
 
-  // ========== Orientation ==========
+  
 
-  /// Set display orientation
+  
   Future<bool> setOrientation(String orientation, String displayServer) async {
     try {
       final displayName = await getDisplayName();
@@ -276,9 +276,9 @@ class DisplayService {
     }
   }
 
-  // ========== Scale ==========
+  
 
-  /// Set display scale
+  
   Future<bool> setScale(int scale) async {
     try {
       final scaleFactor = scale / 100.0;
@@ -295,7 +295,7 @@ class DisplayService {
     }
   }
 
-  /// Get current scale
+  
   Future<int> getScale() async {
     try {
       final result = await Process.run('gsettings', [
@@ -314,7 +314,7 @@ class DisplayService {
     return 100;
   }
 
-  /// Set fractional scaling
+  
   Future<bool> setFractionalScaling(bool enabled) async {
     try {
       final result = await Process.run('gsettings', [
@@ -330,9 +330,9 @@ class DisplayService {
     }
   }
 
-  // ========== Brightness ==========
+  
 
-  /// Initialize brightness and detect method
+  
   Future<Map<String, dynamic>> initBrightness() async {
     final powerService = PowerService();
     try {
@@ -365,7 +365,7 @@ class DisplayService {
     };
   }
 
-  /// Set brightness
+  
   Future<bool> setBrightness(
     double value,
     String method,
@@ -389,9 +389,9 @@ class DisplayService {
     return false;
   }
 
-  // ========== Night Light ==========
+  
 
-  /// Get night light status
+  
   Future<bool> getNightLightStatus() async {
     try {
       final result = await Process.run('gsettings', [
@@ -408,7 +408,7 @@ class DisplayService {
     return false;
   }
 
-  /// Set night light
+  
   Future<bool> setNightLight(bool enabled) async {
     try {
       final result = await Process.run('gsettings', [
@@ -424,7 +424,7 @@ class DisplayService {
     }
   }
 
-  // ========== Helpers ==========
+  
 
   int _gcd(int a, int b) {
     while (b != 0) {

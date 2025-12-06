@@ -54,7 +54,7 @@ class _ShortcutDialogState extends State<ShortcutDialog> {
         30,
         30,
         30,
-      ), // Fixed background color for visibility
+      ), 
       title: Text(
         widget.existingItem == null ? 'New Keybind' : 'Edit Keybind',
         style: const TextStyle(color: Colors.white),

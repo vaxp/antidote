@@ -4,7 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
 import '../bloc/wifi_settings_event.dart';
 
-/// Service class that handles all DBus calls for WiFi settings via NetworkManager
+
 class WiFiService {
   DBusClient? _bus;
 
@@ -13,7 +13,7 @@ class WiFiService {
     return _bus!;
   }
 
-  /// Check if WiFi is enabled
+  
   Future<bool> isWiFiEnabled() async {
     try {
       final nm = DBusRemoteObject(
@@ -34,7 +34,7 @@ class WiFiService {
     }
   }
 
-  /// Toggle WiFi on/off
+  
   Future<bool> toggleWiFi(bool enabled) async {
     try {
       final nm = DBusRemoteObject(
@@ -56,7 +56,7 @@ class WiFiService {
     }
   }
 
-  /// Check if WiFi is available
+  
   Future<bool> isWiFiAvailable() async {
     try {
       final nm = DBusRemoteObject(
@@ -110,7 +110,7 @@ class WiFiService {
     }
   }
 
-  /// Fetch all available networks
+  
   Future<List<WiFiNetwork>> fetchNetworks() async {
     try {
       final nm = DBusRemoteObject(
@@ -156,7 +156,7 @@ class WiFiService {
         );
         final activeApPath = (activeAp as DBusObjectPath).value;
 
-        // Get saved connections
+        
         final settings = DBusRemoteObject(
           bus,
           name: 'org.freedesktop.NetworkManager',
@@ -267,7 +267,7 @@ class WiFiService {
     }
   }
 
-  /// Request WiFi scan
+  
   Future<bool> startScan() async {
     try {
       if (!await isWiFiAvailable()) {
@@ -328,7 +328,7 @@ class WiFiService {
     }
   }
 
-  /// Connect to a network
+  
   Future<bool> connectToNetwork(WiFiNetwork network, String? password) async {
     try {
       final nm = DBusRemoteObject(
@@ -450,7 +450,7 @@ class WiFiService {
     }
   }
 
-  /// Forget a saved network
+  
   Future<bool> forgetNetwork(WiFiNetwork network) async {
     try {
       final nm = DBusRemoteObject(
@@ -506,7 +506,7 @@ class WiFiService {
     }
   }
 
-  /// Dispose resources
+  
   void dispose() {
     _bus?.close();
     _bus = null;

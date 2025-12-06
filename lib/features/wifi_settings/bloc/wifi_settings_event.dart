@@ -1,6 +1,6 @@
 import 'package:equatable/equatable.dart';
 
-/// Represents a WiFi network
+
 class WiFiNetwork extends Equatable {
   final String ssid;
   final int strength;
@@ -20,7 +20,7 @@ class WiFiNetwork extends Equatable {
   List<Object?> get props => [ssid, strength, isSecure, isConnected, isSaved];
 }
 
-/// Base class for all WiFi settings events
+
 abstract class WiFiSettingsEvent extends Equatable {
   const WiFiSettingsEvent();
 
@@ -28,12 +28,12 @@ abstract class WiFiSettingsEvent extends Equatable {
   List<Object?> get props => [];
 }
 
-/// Event to initialize WiFi settings
+
 class InitializeWiFi extends WiFiSettingsEvent {
   const InitializeWiFi();
 }
 
-/// Event to toggle WiFi on/off
+
 class ToggleWiFi extends WiFiSettingsEvent {
   final bool enabled;
 
@@ -43,17 +43,17 @@ class ToggleWiFi extends WiFiSettingsEvent {
   List<Object?> get props => [enabled];
 }
 
-/// Event to start scanning for networks
+
 class StartWiFiScan extends WiFiSettingsEvent {
   const StartWiFiScan();
 }
 
-/// Event to refresh network list
+
 class RefreshNetworks extends WiFiSettingsEvent {
   const RefreshNetworks();
 }
 
-/// Event to connect to a network
+
 class ConnectToNetwork extends WiFiSettingsEvent {
   final WiFiNetwork network;
   final String? password;
@@ -64,12 +64,12 @@ class ConnectToNetwork extends WiFiSettingsEvent {
   List<Object?> get props => [network, password];
 }
 
-/// Event to disconnect from current network
+
 class DisconnectNetwork extends WiFiSettingsEvent {
   const DisconnectNetwork();
 }
 
-/// Event to forget a saved network
+
 class ForgetNetwork extends WiFiSettingsEvent {
   final WiFiNetwork network;
 
@@ -79,7 +79,7 @@ class ForgetNetwork extends WiFiSettingsEvent {
   List<Object?> get props => [network];
 }
 
-/// Event when password is required for connection
+
 class PasswordRequired extends WiFiSettingsEvent {
   final WiFiNetwork network;
 

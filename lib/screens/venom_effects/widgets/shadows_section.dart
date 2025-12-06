@@ -62,7 +62,7 @@ class ShadowsSection extends StatelessWidget {
           enabled: enabled,
         ),
         const SizedBox(height: 10),
-        // Color Sliders (Compact)
+        
         Row(
           children: [
             Expanded(

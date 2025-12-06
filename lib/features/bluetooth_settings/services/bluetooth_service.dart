@@ -4,7 +4,7 @@ import 'package:dbus/dbus.dart';
 import 'package:flutter/foundation.dart';
 import '../bloc/bluetooth_settings_event.dart';
 
-/// Service class that handles all DBus calls for bluetooth settings
+
 class BluetoothService {
   DBusClient? _sysbus;
   final List<StreamSubscription> _subscriptions = [];
@@ -15,7 +15,7 @@ class BluetoothService {
     return _sysbus!;
   }
 
-  /// Find the bluetooth adapter path
+  
   Future<String?> findAdapter() async {
     try {
       final root = DBusRemoteObject(
@@ -43,7 +43,7 @@ class BluetoothService {
     return null;
   }
 
-  /// Check if bluetooth is enabled
+  
   Future<bool> isBluetoothEnabled() async {
     try {
       final adapter = DBusRemoteObject(
@@ -60,7 +60,7 @@ class BluetoothService {
     }
   }
 
-  /// Toggle bluetooth on/off using rfkill
+  
   Future<bool> toggleBluetooth(bool enabled) async {
     try {
       await Process.run('rfkill', [enabled ? 'unblock' : 'block', 'bluetooth']);
@@ -72,7 +72,7 @@ class BluetoothService {
     }
   }
 
-  /// Start device discovery
+  
   Future<bool> startScan(String adapterPath) async {
     try {
       final adapter = DBusRemoteObject(
@@ -87,11 +87,11 @@ class BluetoothService {
         debugPrint("Start Scan Error: $e");
         return false;
       }
-      return true; // Already scanning
+      return true; 
     }
   }
 
-  /// Stop device discovery
+  
   Future<void> stopScan(String adapterPath) async {
     try {
       final adapter = DBusRemoteObject(
@@ -103,7 +103,7 @@ class BluetoothService {
     } catch (_) {}
   }
 
-  /// Fetch all discovered devices
+  
   Future<List<BluetoothDevice>> fetchDevices() async {
     try {
       final root = DBusRemoteObject(
@@ -177,7 +177,7 @@ class BluetoothService {
         );
       }
 
-      // Sort: connected first, then paired, then by signal strength
+      
       devices.sort((a, b) {
         if (a.connected != b.connected) return a.connected ? -1 : 1;
         if (a.paired != b.paired) return a.paired ? -1 : 1;
@@ -191,7 +191,7 @@ class BluetoothService {
     }
   }
 
-  /// Connect to a device
+  
   Future<bool> connectDevice(String path) async {
     try {
       final device = DBusRemoteObject(
@@ -207,7 +207,7 @@ class BluetoothService {
     }
   }
 
-  /// Disconnect from a device
+  
   Future<bool> disconnectDevice(String path) async {
     try {
       final device = DBusRemoteObject(
@@ -222,7 +222,7 @@ class BluetoothService {
     }
   }
 
-  /// Start listening to DBus signals for device changes
+  
   void listenToSignals() {
     _subscriptions.add(
       DBusSignalStream(
@@ -255,7 +255,7 @@ class BluetoothService {
     );
   }
 
-  /// Dispose resources
+  
   void dispose() {
     for (final s in _subscriptions) {
       s.cancel();

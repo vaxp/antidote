@@ -5,7 +5,7 @@ import 'audio_settings_state.dart';
 import '../models/audio_device.dart';
 import '../services/audio_service.dart';
 
-/// BLoC for managing audio settings state
+
 class AudioSettingsBloc extends Bloc<AudioSettingsEvent, AudioSettingsState> {
   final AudioService _audioService;
   Timer? _refreshTimer;
@@ -24,7 +24,7 @@ class AudioSettingsBloc extends Bloc<AudioSettingsEvent, AudioSettingsState> {
     on<TestAudioOutput>(_onTestAudioOutput);
   }
 
-  /// Starts the periodic refresh timer
+  
   void startPeriodicRefresh() {
     _refreshTimer?.cancel();
     _refreshTimer = Timer.periodic(
@@ -33,7 +33,7 @@ class AudioSettingsBloc extends Bloc<AudioSettingsEvent, AudioSettingsState> {
     );
   }
 
-  /// Stops the periodic refresh timer
+  
   void stopPeriodicRefresh() {
     _refreshTimer?.cancel();
     _refreshTimer = null;
@@ -60,7 +60,7 @@ class AudioSettingsBloc extends Bloc<AudioSettingsEvent, AudioSettingsState> {
       final inputVolume = results[3] as double;
       final balance = results[4] as double;
 
-      // Find default devices
+      
       AudioDevice? selectedOutput;
       AudioDevice? selectedInput;
       
@@ -110,15 +110,18 @@ class AudioSettingsBloc extends Bloc<AudioSettingsEvent, AudioSettingsState> {
       ]);
 
       emit(state.copyWith(
+        
         // ignore: unnecessary_cast
         outputVolume: results[0] as double,
+        
         // ignore: unnecessary_cast
         inputVolume: results[1] as double,
+        
         // ignore: unnecessary_cast
         balance: results[2] as double,
       ));
     } catch (e) {
-      // Silent refresh failure
+      
     }
   }
 
@@ -146,7 +149,7 @@ class AudioSettingsBloc extends Bloc<AudioSettingsEvent, AudioSettingsState> {
     SetOutputVolume event,
     Emitter<AudioSettingsState> emit,
   ) async {
-    // Update state immediately for responsive UI
+    
     emit(state.copyWith(outputVolume: event.volume));
     await _audioService.setOutputVolume(event.volume);
   }

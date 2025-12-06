@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:antidote/features/audio_settings/audio_settings.dart';
 
-/// Device dropdown widget for audio device selection
+
 class DeviceDropdown extends StatelessWidget {
   final String label;
   final AudioDevice? selectedDevice;

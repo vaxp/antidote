@@ -5,7 +5,7 @@ import 'package:antidote/screens/bluetooth_settings/widgets/bluetooth_header.dar
 import 'package:antidote/screens/bluetooth_settings/widgets/devices_header.dart';
 import 'package:antidote/screens/bluetooth_settings/widgets/devices_list.dart';
 
-/// Bluetooth Settings Page using BLoC pattern
+
 class BluetoothSettingsPage extends StatelessWidget {
   const BluetoothSettingsPage({super.key});
 
@@ -19,7 +19,7 @@ class BluetoothSettingsPage extends StatelessWidget {
   }
 }
 
-/// The main view widget that builds the UI
+
 class BluetoothSettingsView extends StatelessWidget {
   const BluetoothSettingsView({super.key});
 

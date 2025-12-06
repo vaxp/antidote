@@ -1,7 +1,7 @@
 import 'package:equatable/equatable.dart';
 import 'bluetooth_settings_event.dart';
 
-/// Status of bluetooth settings
+
 enum BluetoothSettingsStatus {
   initial,
   initializing,
@@ -9,7 +9,7 @@ enum BluetoothSettingsStatus {
   error,
 }
 
-/// State class for bluetooth settings
+
 class BluetoothSettingsState extends Equatable {
   final BluetoothSettingsStatus status;
   final bool bluetoothEnabled;
@@ -29,7 +29,7 @@ class BluetoothSettingsState extends Equatable {
     this.errorMessage,
   });
 
-  /// Creates a copy of this state with the given fields replaced
+  
   BluetoothSettingsState copyWith({
     BluetoothSettingsStatus? status,
     bool? bluetoothEnabled,

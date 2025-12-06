@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// Volume slider widget
+
 class VolumeSlider extends StatelessWidget {
   final String label;
   final double value;
@@ -58,7 +58,7 @@ class VolumeSlider extends StatelessWidget {
   }
 }
 
-/// Balance slider widget
+
 class BalanceSlider extends StatelessWidget {
   final double balance;
   final ValueChanged<double> onChanged;

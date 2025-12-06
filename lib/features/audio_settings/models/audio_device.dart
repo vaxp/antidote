@@ -1,6 +1,6 @@
 import 'package:equatable/equatable.dart';
 
-/// Represents an audio device (input or output)
+
 class AudioDevice extends Equatable {
   final String name;
   final String description;

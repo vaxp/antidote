@@ -1,6 +1,6 @@
 import 'package:equatable/equatable.dart';
 
-/// Base class for all power settings events
+
 abstract class PowerSettingsEvent extends Equatable {
   const PowerSettingsEvent();
 
@@ -8,19 +8,19 @@ abstract class PowerSettingsEvent extends Equatable {
   List<Object?> get props => [];
 }
 
-/// Event to load initial power settings
+
 class LoadPowerSettings extends PowerSettingsEvent {
   const LoadPowerSettings();
 }
 
-/// Event to refresh power info periodically
+
 class RefreshPowerInfo extends PowerSettingsEvent {
   const RefreshPowerInfo();
 }
 
-/// Event to change power profile
+
 class SetPowerProfile extends PowerSettingsEvent {
-  final String profile; // 'balanced', 'power-saver', 'performance'
+  final String profile; 
 
   const SetPowerProfile(this.profile);
 
@@ -28,9 +28,9 @@ class SetPowerProfile extends PowerSettingsEvent {
   List<Object?> get props => [profile];
 }
 
-/// Event to perform a power action
+
 class PerformPowerAction extends PowerSettingsEvent {
-  final String action; // 'shutdown', 'reboot', 'suspend', 'logout'
+  final String action; 
 
   const PerformPowerAction(this.action);
 

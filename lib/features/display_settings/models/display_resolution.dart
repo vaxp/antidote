@@ -1,6 +1,6 @@
 import 'package:equatable/equatable.dart';
 
-/// Represents a display resolution
+
 class DisplayResolution extends Equatable {
   final int width;
   final int height;

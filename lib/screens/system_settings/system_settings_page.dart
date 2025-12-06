@@ -9,7 +9,7 @@ import 'package:antidote/screens/system_settings/widgets/remote_desktop_dialog.d
 import 'package:antidote/screens/system_settings/widgets/secure_shell_dialog.dart';
 import 'package:antidote/screens/system_settings/widgets/about_dialog.dart';
 
-/// System Settings Page using BLoC pattern
+
 class SystemSettingsPage extends StatelessWidget {
   const SystemSettingsPage({super.key});
 
@@ -23,7 +23,7 @@ class SystemSettingsPage extends StatelessWidget {
   }
 }
 
-/// The main view widget that builds the UI
+
 class SystemSettingsView extends StatelessWidget {
   const SystemSettingsView({super.key});
 

@@ -3,7 +3,7 @@ import 'wifi_settings_event.dart';
 import 'wifi_settings_state.dart';
 import '../services/wifi_service.dart';
 
-/// BLoC for managing WiFi settings state
+
 class WiFiSettingsBloc extends Bloc<WiFiSettingsEvent, WiFiSettingsState> {
   final WiFiService _wifiService;
 
@@ -99,7 +99,7 @@ class WiFiSettingsBloc extends Bloc<WiFiSettingsEvent, WiFiSettingsState> {
     ConnectToNetwork event,
     Emitter<WiFiSettingsState> emit,
   ) async {
-    // Check if password is required
+    
     if (!event.network.isSaved && event.network.isSecure && event.password == null) {
       emit(state.copyWith(passwordRequiredFor: event.network));
       return;

@@ -1,7 +1,7 @@
 import 'package:equatable/equatable.dart';
 import '../models/display_resolution.dart';
 
-/// Base class for all display settings events
+
 abstract class DisplaySettingsEvent extends Equatable {
   const DisplaySettingsEvent();
 
@@ -9,12 +9,12 @@ abstract class DisplaySettingsEvent extends Equatable {
   List<Object?> get props => [];
 }
 
-/// Event to initialize display settings
+
 class InitializeDisplaySettings extends DisplaySettingsEvent {
   const InitializeDisplaySettings();
 }
 
-/// Event to set display orientation
+
 class SetOrientation extends DisplaySettingsEvent {
   final String orientation;
 
@@ -24,7 +24,7 @@ class SetOrientation extends DisplaySettingsEvent {
   List<Object?> get props => [orientation];
 }
 
-/// Event to set resolution
+
 class SetResolution extends DisplaySettingsEvent {
   final DisplayResolution resolution;
 
@@ -34,7 +34,7 @@ class SetResolution extends DisplaySettingsEvent {
   List<Object?> get props => [resolution];
 }
 
-/// Event to set refresh rate
+
 class SetRefreshRate extends DisplaySettingsEvent {
   final String refreshRate;
 
@@ -44,7 +44,7 @@ class SetRefreshRate extends DisplaySettingsEvent {
   List<Object?> get props => [refreshRate];
 }
 
-/// Event to set brightness
+
 class SetBrightness extends DisplaySettingsEvent {
   final double brightness;
 
@@ -54,7 +54,7 @@ class SetBrightness extends DisplaySettingsEvent {
   List<Object?> get props => [brightness];
 }
 
-/// Event to set display scale
+
 class SetScale extends DisplaySettingsEvent {
   final int scale;
 
@@ -64,7 +64,7 @@ class SetScale extends DisplaySettingsEvent {
   List<Object?> get props => [scale];
 }
 
-/// Event to toggle fractional scaling
+
 class SetFractionalScaling extends DisplaySettingsEvent {
   final bool enabled;
 
@@ -74,7 +74,7 @@ class SetFractionalScaling extends DisplaySettingsEvent {
   List<Object?> get props => [enabled];
 }
 
-/// Event to toggle night light
+
 class SetNightLight extends DisplaySettingsEvent {
   final bool enabled;
 

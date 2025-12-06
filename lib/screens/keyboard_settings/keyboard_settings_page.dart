@@ -6,7 +6,7 @@ import 'package:antidote/screens/keyboard_settings/widgets/input_source_switchin
 import 'package:antidote/screens/keyboard_settings/widgets/special_character_entry_section.dart';
 import 'package:antidote/screens/keyboard_settings/widgets/keyboard_shortcuts_section.dart';
 
-/// Keyboard Settings Page using BLoC pattern
+
 class KeyboardSettingsPage extends StatelessWidget {
   const KeyboardSettingsPage({super.key});
 
@@ -20,7 +20,7 @@ class KeyboardSettingsPage extends StatelessWidget {
   }
 }
 
-/// The main view widget that builds the UI
+
 class KeyboardSettingsView extends StatelessWidget {
   const KeyboardSettingsView({super.key});
 

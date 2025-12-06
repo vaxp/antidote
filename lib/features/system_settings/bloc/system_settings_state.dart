@@ -1,10 +1,10 @@
 import 'package:equatable/equatable.dart';
 import 'system_settings_event.dart';
 
-/// Status of system settings
+
 enum SystemSettingsStatus { initial, loading, loaded, error }
 
-/// State class for system settings
+
 class SystemSettingsState extends Equatable {
   final SystemSettingsStatus status;
   final SystemDialogType? activeDialog;
@@ -16,7 +16,7 @@ class SystemSettingsState extends Equatable {
     this.errorMessage,
   });
 
-  /// Creates a copy of this state with the given fields replaced
+  
   SystemSettingsState copyWith({
     SystemSettingsStatus? status,
     SystemDialogType? activeDialog,

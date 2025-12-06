@@ -1,11 +1,11 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 
-/// Service class for system settings operations
-class SystemService {
-  // ========== Region & Language ==========
 
-  /// Get current language from locale
+class SystemService {
+  
+
+  
   Future<String> getCurrentLanguage() async {
     try {
       final result = await Process.run('locale', []);
@@ -24,9 +24,9 @@ class SystemService {
     return 'en_US.UTF-8';
   }
 
-  // ========== Date & Time ==========
+  
 
-  /// Get current timezone
+  
   Future<String> getCurrentTimezone() async {
     try {
       final result = await Process.run('timedatectl', [
@@ -43,7 +43,7 @@ class SystemService {
     return 'UTC';
   }
 
-  /// Get available timezones
+  
   Future<List<String>> getAvailableTimezones() async {
     try {
       final result = await Process.run('timedatectl', ['list-timezones']);
@@ -62,7 +62,7 @@ class SystemService {
     return [];
   }
 
-  /// Check if automatic time is enabled
+  
   Future<bool> isAutomaticTimeEnabled() async {
     try {
       final result = await Process.run('timedatectl', [
@@ -79,7 +79,7 @@ class SystemService {
     return true;
   }
 
-  /// Set automatic time
+  
   Future<bool> setAutomaticTime(bool enabled) async {
     try {
       final result = await Process.run('timedatectl', [
@@ -93,7 +93,7 @@ class SystemService {
     }
   }
 
-  /// Set timezone
+  
   Future<bool> setTimezone(String timezone) async {
     try {
       final result = await Process.run('sudo', [
@@ -108,9 +108,9 @@ class SystemService {
     }
   }
 
-  // ========== Users ==========
+  
 
-  /// Get list of regular users
+  
   Future<List<Map<String, String>>> getUsers() async {
     final List<Map<String, String>> users = [];
     try {
@@ -141,9 +141,9 @@ class SystemService {
     return users;
   }
 
-  // ========== Remote Desktop ==========
+  
 
-  /// Check if remote desktop is enabled
+  
   Future<bool> isRemoteDesktopEnabled() async {
     try {
       final result = await Process.run('gsettings', [
@@ -160,7 +160,7 @@ class SystemService {
     return false;
   }
 
-  /// Toggle remote desktop
+  
   Future<bool> setRemoteDesktopEnabled(bool enabled) async {
     try {
       final result = await Process.run('gsettings', [
@@ -176,9 +176,9 @@ class SystemService {
     }
   }
 
-  // ========== SSH ==========
+  
 
-  /// Check if SSH service is running
+  
   Future<bool> isSSHEnabled() async {
     try {
       final result = await Process.run('systemctl', ['is-active', 'sshd']);
@@ -189,7 +189,7 @@ class SystemService {
     }
   }
 
-  /// Toggle SSH service
+  
   Future<bool> setSSHEnabled(bool enabled) async {
     try {
       final action = enabled ? 'start' : 'stop';
@@ -201,9 +201,9 @@ class SystemService {
     }
   }
 
-  // ========== About ==========
+  
 
-  /// Get system hostname
+  
   Future<String> getHostname() async {
     try {
       final result = await Process.run('hostname', []);
@@ -216,7 +216,7 @@ class SystemService {
     return 'Unknown';
   }
 
-  /// Get OS name
+  
   Future<String> getOSName() async {
     try {
       final result = await Process.run('lsb_release', ['-d', '-s']);
@@ -229,7 +229,7 @@ class SystemService {
     return 'Linux';
   }
 
-  /// Get kernel version
+  
   Future<String> getKernelVersion() async {
     try {
       final result = await Process.run('uname', ['-r']);
@@ -242,7 +242,7 @@ class SystemService {
     return 'Unknown';
   }
 
-  /// Get total memory
+  
   Future<String> getTotalMemory() async {
     try {
       final result = await Process.run('free', ['-h']);
@@ -263,7 +263,7 @@ class SystemService {
     return 'Unknown';
   }
 
-  /// Get CPU info
+  
   Future<String> getCPUInfo() async {
     try {
       final result = await Process.run('bash', [

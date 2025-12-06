@@ -1,4 +1,4 @@
-// Display Settings Feature Barrel File
+
 export 'bloc/display_settings_bloc.dart';
 export 'bloc/display_settings_event.dart';
 export 'bloc/display_settings_state.dart';

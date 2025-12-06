@@ -36,7 +36,7 @@ class _BluetoothManagerDialogState extends State<BluetoothManagerDialog> {
     super.dispose();
   }
 
-  // ====== تهيئة البلوتوث ======
+  
   Future<void> _initBluetooth() async {
     if (!mounted) return;
     setState(() => _isInitializing = true);
@@ -114,7 +114,7 @@ class _BluetoothManagerDialogState extends State<BluetoothManagerDialog> {
     }
   }
 
-  // ====== عمليات الفحص ======
+  
   Future<void> _startScan() async {
     if (!mounted) return;
     if (_adapterPath == null || _isScanning) return;
@@ -157,7 +157,7 @@ class _BluetoothManagerDialogState extends State<BluetoothManagerDialog> {
     if (mounted) setState(() => _isScanning = false);
   }
 
-  // ====== جلب الأجهزة (مصحح) ======
+  
   Future<void> _fetchDevices() async {
     if (!mounted) return;
     try {
@@ -175,8 +175,8 @@ class _BluetoothManagerDialogState extends State<BluetoothManagerDialog> {
 
       final List<Map<String, dynamic>> newDevices = [];
 
-      // helper to unwrap a DBusValue -> DBusX and return the typed value
-      // ignore: no_leading_underscores_for_local_identifiers
+      
+      
       DBusValue? _unwrap(DBusValue? v) {
         if (v == null) return null;
         if (v is DBusVariant) return v.value;
@@ -203,7 +203,7 @@ class _BluetoothManagerDialogState extends State<BluetoothManagerDialog> {
         if (aliasV is DBusString) {
           name = aliasV.value;
         } else if (nameV is DBusString)
-          // ignore: curly_braces_in_flow_control_structures
+          
           name = nameV.value;
 
         String address = '??:??:??:??:??:??';
@@ -232,7 +232,7 @@ class _BluetoothManagerDialogState extends State<BluetoothManagerDialog> {
         });
       }
 
-      // sort: connected first, then paired, then by RSSI
+      
       newDevices.sort((a, b) {
         if (a['connected'] != b['connected']) return a['connected'] ? -1 : 1;
         if (a['paired'] != b['paired']) return a['paired'] ? -1 : 1;
@@ -372,7 +372,7 @@ class _BluetoothManagerDialogState extends State<BluetoothManagerDialog> {
                   ? Center(
                       child: Text(
                         "No devices found",
-                        // ignore: deprecated_member_use
+                        
                         style: TextStyle(color: Colors.white.withOpacity(0.3)),
                       ),
                     )
@@ -386,9 +386,9 @@ class _BluetoothManagerDialogState extends State<BluetoothManagerDialog> {
                           margin: const EdgeInsets.only(bottom: 8),
                           decoration: BoxDecoration(
                             color: isConnected
-                                // ignore: deprecated_member_use
+                                
                                 ? Colors.blueAccent.withOpacity(0.15)
-                                // ignore: deprecated_member_use
+                                
                                 : Colors.white.withOpacity(0.05),
                             borderRadius: BorderRadius.circular(8),
                           ),
@@ -413,7 +413,7 @@ class _BluetoothManagerDialogState extends State<BluetoothManagerDialog> {
                             subtitle: Text(
                               "${dev['address']} ${dev['rssi'] > -100 ? '(${dev['rssi']} dBm)' : ''}",
                               style: TextStyle(
-                                // ignore: deprecated_member_use
+                                
                                 color: Colors.white.withOpacity(0.5),
                                 fontSize: 12,
                               ),

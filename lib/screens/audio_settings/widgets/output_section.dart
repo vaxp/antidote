@@ -6,7 +6,7 @@ import 'device_dropdown.dart';
 import 'sliders.dart';
 import 'common_widgets.dart';
 
-/// Output section widget
+
 class OutputSection extends StatelessWidget {
   const OutputSection({super.key});
 

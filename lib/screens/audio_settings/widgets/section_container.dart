@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// Reusable section container widget
+
 class SectionContainer extends StatelessWidget {
   final String title;
   final List<Widget> children;

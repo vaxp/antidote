@@ -2,9 +2,9 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import '../models/audio_device.dart';
 
-/// Service class that handles all system calls for audio settings
+
 class AudioService {
-  /// Get output devices using pactl
+  
   Future<List<AudioDevice>> getOutputDevices() async {
     try {
       final result = await Process.run('pactl', ['list', 'short', 'sinks']);
@@ -14,7 +14,7 @@ class AudioService {
       final List<AudioDevice> devices = [];
       String? defaultSink;
 
-      // Get default sink
+      
       final defaultResult = await Process.run('pactl', ['get-default-sink']);
       if (defaultResult.exitCode == 0) {
         defaultSink = defaultResult.stdout.toString().trim();
@@ -28,7 +28,7 @@ class AudioService {
           final sinkName = parts[1];
           String description = sinkName;
 
-          // Get better description
+          
           try {
             final sinkInfo = await Process.run('pactl', ['list', 'sinks']);
             if (sinkInfo.exitCode == 0) {
@@ -72,7 +72,7 @@ class AudioService {
     }
   }
 
-  /// Get input devices using pactl
+  
   Future<List<AudioDevice>> getInputDevices() async {
     try {
       final result = await Process.run('pactl', ['list', 'short', 'sources']);
@@ -82,7 +82,7 @@ class AudioService {
       final List<AudioDevice> devices = [];
       String? defaultSource;
 
-      // Get default source
+      
       final defaultResult = await Process.run('pactl', ['get-default-source']);
       if (defaultResult.exitCode == 0) {
         defaultSource = defaultResult.stdout.toString().trim();
@@ -95,12 +95,12 @@ class AudioService {
           final sourceIndex = parts[0];
           final sourceName = parts[1];
 
-          // Skip monitor sources
+          
           if (sourceName.contains('.monitor')) continue;
 
           String description = sourceName;
 
-          // Get better description
+          
           try {
             final sourceInfo = await Process.run('pactl', ['list', 'sources']);
             if (sourceInfo.exitCode == 0) {
@@ -144,7 +144,7 @@ class AudioService {
     }
   }
 
-  /// Get output volume
+  
   Future<double> getOutputVolume() async {
     try {
       final result = await Process.run('pactl', [
@@ -164,7 +164,7 @@ class AudioService {
     return 75.0;
   }
 
-  /// Get input volume
+  
   Future<double> getInputVolume() async {
     try {
       final result = await Process.run('pactl', [
@@ -184,7 +184,7 @@ class AudioService {
     return 75.0;
   }
 
-  /// Get audio balance
+  
   Future<double> getBalance() async {
     try {
       final result = await Process.run('pactl', [
@@ -207,7 +207,7 @@ class AudioService {
     return 50.0;
   }
 
-  /// Set output device
+  
   Future<bool> setOutputDevice(AudioDevice device) async {
     try {
       await Process.run('pactl', ['set-default-sink', device.name]);
@@ -218,7 +218,7 @@ class AudioService {
     }
   }
 
-  /// Set input device
+  
   Future<bool> setInputDevice(AudioDevice device) async {
     try {
       await Process.run('pactl', ['set-default-source', device.name]);
@@ -229,7 +229,7 @@ class AudioService {
     }
   }
 
-  /// Set output volume
+  
   Future<bool> setOutputVolume(double value) async {
     try {
       final volumePercent = value.toInt();
@@ -245,7 +245,7 @@ class AudioService {
     }
   }
 
-  /// Set input volume
+  
   Future<bool> setInputVolume(double value) async {
     try {
       final volumePercent = value.toInt();
@@ -261,7 +261,7 @@ class AudioService {
     }
   }
 
-  /// Set audio balance
+  
   Future<bool> setBalance(double value, double outputVolume) async {
     try {
       final diff = (value - 50) * 2;
@@ -281,7 +281,7 @@ class AudioService {
     }
   }
 
-  /// Test audio output
+  
   Future<void> testOutput() async {
     try {
       await Process.run('paplay', [

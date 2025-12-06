@@ -13,7 +13,7 @@ class AppsSettingsPage extends StatefulWidget {
 }
 
 class _AppsSettingsPageState extends State<AppsSettingsPage> {
-  // 20 Preset Colors
+  
   final List<Color> _presetColors = [
     Colors.red,
     Colors.pink,
@@ -52,7 +52,7 @@ class _AppsSettingsPageState extends State<AppsSettingsPage> {
             AppsSettingsHeader(onReset: _resetToDefaults),
             const SizedBox(height: 32),
 
-            // Advanced Color Control
+            
             SystemThemeColorSection(
               currentColor: _currentColor,
               opacity: _opacity,
@@ -74,7 +74,7 @@ class _AppsSettingsPageState extends State<AppsSettingsPage> {
 
             const SizedBox(height: 32),
 
-            // Text Color Section
+            
             SystemTextColorSection(
               currentTextColor: _currentTextColor,
               presetColors: _presetColors,
@@ -172,14 +172,14 @@ class _AppsSettingsPageState extends State<AppsSettingsPage> {
 
   void _resetToDefaults() {
     setState(() {
-      // Default Background: Color.fromARGB(100, 0, 0, 0)
+      
       _currentColor = const Color.fromARGB(100, 0, 0, 0);
-      _opacity = 1.0; // Reset opacity to full (since alpha is in color)
+      _opacity = 1.0; 
 
-      // Default Text: White
+      
       _currentTextColor = Colors.white;
 
-      // Update Config
+      
       _updateConfig(_currentColor);
       _updateTextConfig(_currentTextColor);
     });

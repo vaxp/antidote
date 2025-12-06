@@ -5,7 +5,7 @@ import 'package:antidote/screens/display_settings/widgets/display_header.dart';
 import 'package:antidote/screens/display_settings/widgets/settings_grid.dart';
 import 'package:antidote/screens/display_settings/widgets/fractional_scaling_section.dart';
 
-/// Display Settings Page using BLoC pattern
+
 class DisplaySettingsPage extends StatelessWidget {
   const DisplaySettingsPage({super.key});
 
@@ -19,7 +19,7 @@ class DisplaySettingsPage extends StatelessWidget {
   }
 }
 
-/// The main view widget that builds the UI
+
 class DisplaySettingsView extends StatelessWidget {
   const DisplaySettingsView({super.key});
 

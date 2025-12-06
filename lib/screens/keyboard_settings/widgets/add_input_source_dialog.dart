@@ -45,7 +45,7 @@ class _AddInputSourceDialogState extends State<AddInputSourceDialog> {
         padding: const EdgeInsets.all(24),
         child: Column(
           children: [
-            // Header
+            
             Row(
               children: [
                 TextButton(
@@ -82,7 +82,7 @@ class _AddInputSourceDialogState extends State<AddInputSourceDialog> {
               ],
             ),
             const SizedBox(height: 16),
-            // Search bar
+            
             TextField(
               onChanged: (value) => setState(() => _searchQuery = value),
               style: const TextStyle(color: Colors.white),
@@ -103,7 +103,7 @@ class _AddInputSourceDialogState extends State<AddInputSourceDialog> {
               ),
             ),
             const SizedBox(height: 16),
-            // List of sources
+            
             Expanded(
               child: ListView.builder(
                 itemCount: _filteredSources.length,

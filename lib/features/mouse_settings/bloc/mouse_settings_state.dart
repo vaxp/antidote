@@ -1,24 +1,24 @@
 import 'package:equatable/equatable.dart';
 
-/// Status of mouse settings
+
 enum MouseSettingsStatus { initial, loading, loaded, error }
 
-/// State class for mouse settings
+
 class MouseSettingsState extends Equatable {
   final MouseSettingsStatus status;
-  final int selectedTab; // 0 = Mouse, 1 = Touchpad
+  final int selectedTab; 
 
-  // Mouse settings
-  final String primaryButton; // 'left' or 'right'
+  
+  final String primaryButton; 
   final double mousePointerSpeed;
   final bool mouseAcceleration;
-  final String scrollDirection; // 'traditional' or 'natural'
+  final String scrollDirection; 
 
-  // Touchpad settings
+  
   final bool touchpadEnabled;
   final bool disableWhileTyping;
   final double touchpadPointerSpeed;
-  final String secondaryClick; // 'two-finger' or 'corner'
+  final String secondaryClick; 
   final bool tapToClick;
 
   final String? errorMessage;
@@ -38,7 +38,7 @@ class MouseSettingsState extends Equatable {
     this.errorMessage,
   });
 
-  /// Creates a copy of this state with the given fields replaced
+  
   MouseSettingsState copyWith({
     MouseSettingsStatus? status,
     int? selectedTab,

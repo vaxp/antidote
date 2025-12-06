@@ -4,7 +4,7 @@ import 'power_settings_event.dart';
 import 'power_settings_state.dart';
 import '../services/power_service.dart';
 
-/// BLoC for managing power settings state
+
 class PowerSettingsBloc extends Bloc<PowerSettingsEvent, PowerSettingsState> {
   final PowerService _powerService;
   StreamSubscription? _batterySubscription;
@@ -35,7 +35,7 @@ class PowerSettingsBloc extends Bloc<PowerSettingsEvent, PowerSettingsState> {
       return;
     }
 
-    // Subscribe to battery updates
+    
     _batterySubscription?.cancel();
     _batterySubscription = _powerService.batteryChangedStream.listen((data) {
       add(const RefreshPowerInfo());
@@ -44,7 +44,7 @@ class PowerSettingsBloc extends Bloc<PowerSettingsEvent, PowerSettingsState> {
     try {
       final batteryInfo = await _powerService.getBatteryInfo();
 
-      // Note: Power Profiles are not yet supported by the daemon, defaulting to 'balanced'
+      
 
       emit(
         state.copyWith(
@@ -83,7 +83,7 @@ class PowerSettingsBloc extends Bloc<PowerSettingsEvent, PowerSettingsState> {
     SetPowerProfile event,
     Emitter<PowerSettingsState> emit,
   ) async {
-    // Placeholder: Power profiles not implemented in daemon yet
+    
     emit(state.copyWith(activePowerProfile: event.profile));
   }
 

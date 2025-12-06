@@ -2,13 +2,13 @@ import 'dart:io';
 import 'package:xml/xml.dart';
 
 class LayoutModel {
-  final String id;    // مثال: ar
-  final String name;  // مثال: Arabic
+  final String id;    
+  final String name;  
   LayoutModel({required this.id, required this.name});
 }
 
 class LayoutRepository {
-  // مسار ملف تعريف اللغات الرسمي في لينكس
+  
   static const String _rulesPath = '/usr/share/X11/xkb/rules/evdev.xml';
 
   Future<List<LayoutModel>> getSystemLayouts() async {
@@ -20,7 +20,7 @@ class LayoutRepository {
     final content = await file.readAsString();
     final document = XmlDocument.parse(content);
     
-    // استخراج قائمة اللغات
+    
     final layoutList = document.findAllElements('layoutList').first;
     final layouts = layoutList.findAllElements('layout');
 
@@ -37,7 +37,7 @@ class LayoutRepository {
           name: descNode.innerText,
         ));
       } catch (e) {
-        // تخطي العناصر التالفة إن وجدت
+        
         continue;
       }
     }

@@ -1,4 +1,4 @@
-import 'dart:ui'; // مهم للـ ImageFilter
+import 'dart:ui'; 
 import 'package:antidote/core/appbar.dart';
 import 'package:flutter/material.dart';
 import 'package:window_manager/window_manager.dart';

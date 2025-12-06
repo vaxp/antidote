@@ -5,7 +5,7 @@ import 'package:antidote/screens/shortcuts/services/shortcut_manager.dart';
 import 'package:antidote/screens/shortcuts/widgets/shortcut_list_tile.dart';
 import 'package:antidote/screens/shortcuts/widgets/shortcut_dialog.dart';
 
-// --- UI Page ---
+
 class ShortcutsPage extends StatefulWidget {
   const ShortcutsPage({super.key});
 
@@ -46,7 +46,7 @@ class _ShortcutsPageState extends State<ShortcutsPage> {
             }
           });
 
-          // Save and restart
+          
           await _manager.saveShortcuts(_shortcuts);
 
           if (mounted) {
@@ -87,7 +87,7 @@ class _ShortcutsPageState extends State<ShortcutsPage> {
           IconButton(
             icon: const Icon(Icons.refresh, color: Colors.cyanAccent),
             onPressed: () async {
-              // Emergency button to restart daemon manually
+              
               await _manager.restartDaemon();
               if (mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(

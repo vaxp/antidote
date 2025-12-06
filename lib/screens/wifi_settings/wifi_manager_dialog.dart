@@ -72,7 +72,7 @@ class _WiFiManagerDialogState extends State<WiFiManagerDialog> {
         path: DBusObjectPath('/org/freedesktop/NetworkManager'),
       );
 
-      // Get all devices
+      
       final devices = await nm.callMethod(
         'org.freedesktop.NetworkManager',
         'GetDevices',
@@ -90,16 +90,16 @@ class _WiFiManagerDialogState extends State<WiFiManagerDialog> {
           path: DBusObjectPath((devicePath as DBusObjectPath).value),
         );
 
-        // Check if it's a WiFi device
+        
         final deviceType = await device.getProperty(
           'org.freedesktop.NetworkManager.Device',
           'DeviceType',
         );
 
-        // DeviceType 2 is WiFi
+        
         if ((deviceType as DBusUint32).value != 2) continue;
 
-        // Get access points
+        
         final aps = await device.callMethod(
           'org.freedesktop.NetworkManager.Device.Wireless',
           'GetAccessPoints',
@@ -113,7 +113,7 @@ class _WiFiManagerDialogState extends State<WiFiManagerDialog> {
         );
         final activeApPath = (activeAp as DBusObjectPath).value;
 
-        // Get saved connections
+        
         final settings = DBusRemoteObject(
           _bus,
           name: 'org.freedesktop.NetworkManager',
@@ -143,11 +143,11 @@ class _WiFiManagerDialogState extends State<WiFiManagerDialog> {
           );
 
           final wirelessSettings =
-              // ignore: collection_methods_unrelated_type
+              
               (settingsMap.values[0] as DBusDict).children['802-11-wireless'];
           if (wirelessSettings != null) {
             final ssid =
-                // ignore: collection_methods_unrelated_type
+                
                 ((wirelessSettings as DBusDict).children['ssid'] as DBusArray)
                     .children;
             final ssidStr = String.fromCharCodes(
@@ -190,7 +190,7 @@ class _WiFiManagerDialogState extends State<WiFiManagerDialog> {
             (ssidBytes as DBusArray).children.map((e) => (e as DBusByte).value),
           );
 
-          // Skip hidden networks
+          
           if (ssid.isEmpty) continue;
 
           final isSecure =
@@ -210,7 +210,7 @@ class _WiFiManagerDialogState extends State<WiFiManagerDialog> {
         }
       }
 
-      // Sort networks: Connected > Saved > Signal Strength
+      
       networks.sort((a, b) {
         if (a.isConnected != b.isConnected) {
           return a.isConnected ? -1 : 1;
@@ -277,7 +277,7 @@ class _WiFiManagerDialogState extends State<WiFiManagerDialog> {
         }
       }
 
-      // Refresh after a short delay to allow scan to complete
+      
       await Future.delayed(const Duration(seconds: 2));
       await _fetchNetworks();
     } finally {
@@ -300,7 +300,7 @@ class _WiFiManagerDialogState extends State<WiFiManagerDialog> {
       );
 
       if (!network.isSaved) {
-        // Show password dialog for secure networks
+        
         if (network.isSecure) {
           final password = await _showPasswordDialog();
           if (password == null) {
@@ -308,7 +308,7 @@ class _WiFiManagerDialogState extends State<WiFiManagerDialog> {
             return;
           }
 
-          // Create new connection
+          
           final conn = {
             'connection': {
               'type': const DBusString('802-11-wireless'),
@@ -330,7 +330,7 @@ class _WiFiManagerDialogState extends State<WiFiManagerDialog> {
             'ipv6': {'method': const DBusString('auto')},
           };
 
-          // Get the Settings object first
+          
           final nmSettings = DBusRemoteObject(
             _bus,
             name: 'org.freedesktop.NetworkManager',
@@ -361,7 +361,7 @@ class _WiFiManagerDialogState extends State<WiFiManagerDialog> {
         }
       }
 
-      // Get all connections through Settings interface
+      
       final settings = DBusRemoteObject(
         _bus,
         name: 'org.freedesktop.NetworkManager',
@@ -375,7 +375,7 @@ class _WiFiManagerDialogState extends State<WiFiManagerDialog> {
         replySignature: DBusSignature('ao'),
       );
 
-      // Find matching connection
+      
       String? connPath;
       for (final conn in (conns.values[0] as DBusArray).children) {
         final settings = DBusRemoteObject(
@@ -392,11 +392,11 @@ class _WiFiManagerDialogState extends State<WiFiManagerDialog> {
         );
 
         final wirelessSettings =
-            // ignore: collection_methods_unrelated_type
+            
             (settingsMap.values[0] as DBusDict).children['802-11-wireless'];
         if (wirelessSettings != null) {
           final ssid =
-              // ignore: collection_methods_unrelated_type
+              
               ((wirelessSettings as DBusDict).children['ssid'] as DBusArray)
                   .children;
           final ssidStr = String.fromCharCodes(
@@ -410,7 +410,7 @@ class _WiFiManagerDialogState extends State<WiFiManagerDialog> {
       }
 
       if (connPath != null) {
-        // Activate the connection
+        
         await nm.callMethod(
           'org.freedesktop.NetworkManager',
           'ActivateConnection',
@@ -461,11 +461,11 @@ class _WiFiManagerDialogState extends State<WiFiManagerDialog> {
         );
 
         final wirelessSettings =
-            // ignore: collection_methods_unrelated_type
+            
             (settingsMap.values[0] as DBusDict).children['802-11-wireless'];
         if (wirelessSettings != null) {
           final ssid =
-              // ignore: collection_methods_unrelated_type
+              
               ((wirelessSettings as DBusDict).children['ssid'] as DBusArray)
                   .children;
           final ssidStr = String.fromCharCodes(
@@ -591,10 +591,10 @@ class _WiFiManagerDialogState extends State<WiFiManagerDialog> {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  // ignore: deprecated_member_use
+                  
                   color: Colors.red.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
-                  // ignore: deprecated_member_use
+                  
                   border: Border.all(color: Colors.red.withOpacity(0.2)),
                 ),
                 child: Row(
@@ -633,14 +633,14 @@ class _WiFiManagerDialogState extends State<WiFiManagerDialog> {
                       Icon(
                         Icons.wifi_find_rounded,
                         size: 48,
-                        // ignore: deprecated_member_use
+                        
                         color: Colors.white.withOpacity(0.1),
                       ),
                       const SizedBox(height: 16),
                       Text(
                         'No networks found',
                         style: TextStyle(
-                          // ignore: deprecated_member_use
+                          
                           color: Colors.white.withOpacity(0.3),
                           fontSize: 16,
                         ),
@@ -699,7 +699,7 @@ class _WiFiManagerDialogState extends State<WiFiManagerDialog> {
                               child: Icon(
                                 Icons.lock_rounded,
                                 size: 16,
-                                // ignore: deprecated_member_use
+                                
                                 color: Colors.white.withOpacity(0.3),
                               ),
                             ),

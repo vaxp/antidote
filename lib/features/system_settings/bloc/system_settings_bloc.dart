@@ -2,9 +2,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'system_settings_event.dart';
 import 'system_settings_state.dart';
 
-/// BLoC for managing system settings state
-/// Note: This BLoC primarily manages dialog navigation state.
-/// Individual dialogs handle their own state internally.
+
+
+
 class SystemSettingsBloc
     extends Bloc<SystemSettingsEvent, SystemSettingsState> {
   SystemSettingsBloc() : super(const SystemSettingsState()) {

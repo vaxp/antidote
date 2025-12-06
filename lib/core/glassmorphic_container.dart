@@ -52,7 +52,7 @@ class GlassmorphicContainer extends StatelessWidget {
             alignment: alignment,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(borderRadius),
-              // gradient: linearGradient,
+              
               border: border > 0
                   ? Border.all(
                       width: border,

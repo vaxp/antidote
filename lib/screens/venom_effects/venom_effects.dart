@@ -16,13 +16,14 @@ class CompositorSettingsPage extends StatefulWidget {
 
 class _CompositorSettingsPageState extends State<CompositorSettingsPage> {
   bool _isLoading = true;
+  
   // ignore: unused_field
   String? _errorMessage;
   Timer? _debounce;
   final String _configPath =
       '${Platform.environment['HOME']}/.config/picom/picom.conf';
 
-  // --- Shadows ---
+  
   bool _shadowEnabled = true;
   double _shadowRadius = 35.0;
   double _shadowOpacity = 0.5;
@@ -30,15 +31,15 @@ class _CompositorSettingsPageState extends State<CompositorSettingsPage> {
   double _shadowGreen = 0.0;
   double _shadowBlue = 0.0;
 
-  // --- Blur ---
+  
   bool _blurEnabled = true;
   double _blurStrength = 5.0;
 
-  // --- Animations (Fading) ---
+  
   bool _fadingEnabled = true;
-  double _fadeSpeed = 50.0; // من 0 إلى 100 لسهولة الاستخدام
+  double _fadeSpeed = 50.0; 
 
-  // --- Geometry ---
+  
   double _cornerRadius = 10.0;
 
   @override
@@ -66,7 +67,7 @@ class _CompositorSettingsPageState extends State<CompositorSettingsPage> {
       _blurStrength = 5.0;
 
       _fadingEnabled = true;
-      _fadeSpeed = 70.0; // سرعة متوسطة جيدة
+      _fadeSpeed = 70.0; 
 
       _cornerRadius = 10.0;
       _updateConfig();
@@ -80,7 +81,7 @@ class _CompositorSettingsPageState extends State<CompositorSettingsPage> {
       final content = await file.readAsString();
 
       setState(() {
-        // --- Shadows ---
+        
         final shadowMatch = RegExp(
           r'^\s*shadow\s*=\s*(true|false)',
           multiLine: true,
@@ -102,7 +103,7 @@ class _CompositorSettingsPageState extends State<CompositorSettingsPage> {
         if (sOpacityMatch != null)
           _shadowOpacity = double.tryParse(sOpacityMatch.group(1)!) ?? 0.5;
 
-        // Colors
+        
         final sRedMatch = RegExp(
           r'^\s*shadow-red\s*=\s*([\d\.]+)',
           multiLine: true,
@@ -122,7 +123,7 @@ class _CompositorSettingsPageState extends State<CompositorSettingsPage> {
         if (sBlueMatch != null)
           _shadowBlue = double.tryParse(sBlueMatch.group(1)!) ?? 0.0;
 
-        // --- Blur ---
+        
         final bStrengthMatch = RegExp(
           r'strength\s*=\s*(\d+)',
         ).firstMatch(content);
@@ -135,25 +136,25 @@ class _CompositorSettingsPageState extends State<CompositorSettingsPage> {
         if (bMethodMatch != null)
           _blurEnabled = (bMethodMatch.group(1) != "none");
 
-        // --- Animations (Fading) ---
+        
         final fadeMatch = RegExp(
           r'^\s*fading\s*=\s*(true|false)',
           multiLine: true,
         ).firstMatch(content);
         if (fadeMatch != null) _fadingEnabled = fadeMatch.group(1) == 'true';
 
-        // قراءة سرعة الفيد وتحويلها لنسبة مئوية (0.01-0.1) -> (0-100)
+        
         final fadeStepMatch = RegExp(
           r'^\s*fade-in-step\s*=\s*([\d\.]+)',
           multiLine: true,
         ).firstMatch(content);
         if (fadeStepMatch != null) {
           double rawStep = double.tryParse(fadeStepMatch.group(1)!) ?? 0.07;
-          // معادلة عكسية تقريبية: (step - 0.01) / 0.0009
+          
           _fadeSpeed = ((rawStep - 0.01) * 1000).clamp(0.0, 100.0);
         }
 
-        // --- Geometry ---
+        
         final cRadiusMatch = RegExp(
           r'^\s*corner-radius\s*=\s*(\d+)',
           multiLine: true,
@@ -196,7 +197,7 @@ class _CompositorSettingsPageState extends State<CompositorSettingsPage> {
           );
         }
 
-        // Shadows
+        
         content = replaceValue('shadow', _shadowEnabled.toString());
         content = replaceValue(
           'shadow-radius',
@@ -210,7 +211,7 @@ class _CompositorSettingsPageState extends State<CompositorSettingsPage> {
         content = replaceValue('shadow-green', _shadowGreen.toStringAsFixed(2));
         content = replaceValue('shadow-blue', _shadowBlue.toStringAsFixed(2));
 
-        // Blur
+        
         content = replaceBlockValue(
           'strength',
           _blurStrength.toInt().toString(),
@@ -220,15 +221,15 @@ class _CompositorSettingsPageState extends State<CompositorSettingsPage> {
           _blurEnabled ? '"dual_kawase"' : '"none"',
         );
 
-        // Animations
+        
         content = replaceValue('fading', _fadingEnabled.toString());
-        // معادلة التحويل من 0-100 إلى 0.01-0.10
-        // كلما زاد الرقم زادت السرعة (Step أكبر)
+        
+        
         double stepValue = 0.01 + (_fadeSpeed / 1000);
         content = replaceValue('fade-in-step', stepValue.toStringAsFixed(3));
         content = replaceValue('fade-out-step', stepValue.toStringAsFixed(3));
 
-        // Geometry
+        
         content = replaceValue(
           'corner-radius',
           _cornerRadius.toInt().toString(),
@@ -297,7 +298,7 @@ class _CompositorSettingsPageState extends State<CompositorSettingsPage> {
                       vertical: 10,
                     ),
                     children: [
-                      // === SHADOWS ===
+                      
                       ShadowsSection(
                         enabled: _shadowEnabled,
                         radius: _shadowRadius,
@@ -333,7 +334,7 @@ class _CompositorSettingsPageState extends State<CompositorSettingsPage> {
 
                       const SizedBox(height: 20),
 
-                      // === BLUR ===
+                      
                       BlurSection(
                         enabled: _blurEnabled,
                         strength: _blurStrength,
@@ -349,7 +350,7 @@ class _CompositorSettingsPageState extends State<CompositorSettingsPage> {
 
                       const SizedBox(height: 20),
 
-                      // === NEW: ANIMATIONS ===
+                      
                       AnimationsSection(
                         enabled: _fadingEnabled,
                         speed: _fadeSpeed,
@@ -365,7 +366,7 @@ class _CompositorSettingsPageState extends State<CompositorSettingsPage> {
 
                       const SizedBox(height: 20),
 
-                      // === GEOMETRY ===
+                      
                       GeometrySection(
                         cornerRadius: _cornerRadius,
                         onCornerRadiusChanged: (v) {

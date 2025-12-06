@@ -1,21 +1,21 @@
 import 'package:equatable/equatable.dart';
 import '../models/audio_device.dart';
 
-/// Status of audio settings loading
+
 enum AudioSettingsStatus { initial, loading, loaded, error }
 
-/// State class for audio settings
+
 class AudioSettingsState extends Equatable {
   final AudioSettingsStatus status;
 
-  // Output settings
+  
   final List<AudioDevice> outputDevices;
   final AudioDevice? selectedOutputDevice;
   final double outputVolume;
   final double balance;
   final bool overamplification;
 
-  // Input settings
+  
   final List<AudioDevice> inputDevices;
   final AudioDevice? selectedInputDevice;
   final double inputVolume;
@@ -35,7 +35,7 @@ class AudioSettingsState extends Equatable {
     this.errorMessage,
   });
 
-  /// Creates a copy of this state with the given fields replaced
+  
   AudioSettingsState copyWith({
     AudioSettingsStatus? status,
     List<AudioDevice>? outputDevices,

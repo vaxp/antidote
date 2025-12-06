@@ -5,7 +5,7 @@ import 'package:antidote/screens/mouse_settings/widgets/tabs.dart';
 import 'package:antidote/screens/mouse_settings/widgets/tab_content.dart';
 import 'package:antidote/screens/mouse_settings/widgets/test_button.dart';
 
-/// Mouse Settings Page using BLoC pattern
+
 class MouseSettingsPage extends StatelessWidget {
   const MouseSettingsPage({super.key});
 
@@ -18,7 +18,7 @@ class MouseSettingsPage extends StatelessWidget {
   }
 }
 
-/// The main view widget that builds the UI
+
 class MouseSettingsView extends StatelessWidget {
   const MouseSettingsView({super.key});
 

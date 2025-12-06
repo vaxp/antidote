@@ -22,7 +22,7 @@ class _DateTimeDialogState extends State<DateTimeDialog> {
 
   Future<void> _loadDateTimeSettings() async {
     try {
-      // Get current timezone
+      
       final tzResult = await Process.run('timedatectl', [
         'show',
         '--property=Timezone',
@@ -32,7 +32,7 @@ class _DateTimeDialogState extends State<DateTimeDialog> {
         setState(() => _timezone = tzResult.stdout.toString().trim());
       }
 
-      // Get available timezones
+      
       final listResult = await Process.run('timedatectl', ['list-timezones']);
       if (listResult.exitCode == 0) {
         final allTimezones =
@@ -40,20 +40,20 @@ class _DateTimeDialogState extends State<DateTimeDialog> {
                 .toString()
                 .split('\n')
                 .where((tz) => tz.isNotEmpty)
-                .toSet() // Remove duplicates
+                .toSet() 
                 .toList()
               ..sort();
 
         setState(() {
           _timezones = allTimezones;
-          // Ensure current timezone is in the list
+          
           if (!_timezones.contains(_timezone) && _timezone.isNotEmpty) {
             _timezones.insert(0, _timezone);
           }
         });
       }
 
-      // Check if automatic time is enabled
+      
       final autoResult = await Process.run('timedatectl', [
         'show',
         '--property=NTP',
@@ -169,13 +169,13 @@ class _DateTimeDialogState extends State<DateTimeDialog> {
   }
 
   Widget _buildTimezoneDropdown() {
-    // Ensure current timezone is in the list
+    
     final timezoneList = List<String>.from(_timezones);
     if (_timezone.isNotEmpty && !timezoneList.contains(_timezone)) {
       timezoneList.insert(0, _timezone);
     }
 
-    // Remove duplicates and ensure value exists
+    
     final uniqueTimezones = timezoneList.toSet().toList()..sort();
     final displayValue = uniqueTimezones.contains(_timezone) ? _timezone : null;
 

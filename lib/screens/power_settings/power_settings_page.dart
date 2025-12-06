@@ -5,7 +5,7 @@ import 'package:antidote/screens/power_settings/widgets/battery_tile.dart';
 import 'package:antidote/screens/power_settings/widgets/power_profiles_section.dart';
 import 'package:antidote/screens/power_settings/widgets/system_actions_section.dart';
 
-/// Power Settings Page using BLoC pattern
+
 class PowerSettingsPage extends StatelessWidget {
   const PowerSettingsPage({super.key});
 
@@ -18,7 +18,7 @@ class PowerSettingsPage extends StatelessWidget {
   }
 }
 
-/// The main view widget that builds the UI
+
 class PowerSettingsView extends StatelessWidget {
   const PowerSettingsView({super.key});
 

@@ -1,15 +1,15 @@
 import 'package:equatable/equatable.dart';
 import '../models/display_resolution.dart';
 
-/// Status of display settings
+
 enum DisplaySettingsStatus { initial, loading, loaded, error }
 
-/// State class for display settings
+
 class DisplaySettingsState extends Equatable {
   final DisplaySettingsStatus status;
 
-  // Display info
-  final String displayServer; // 'X11' or 'Wayland'
+  
+  final String displayServer; 
   final String orientation;
   final DisplayResolution? currentResolution;
   final DisplayResolution? nativeResolution;
@@ -17,17 +17,17 @@ class DisplaySettingsState extends Equatable {
   final String refreshRate;
   final List<String> availableRefreshRates;
 
-  // Scale
+  
   final int scale;
   final bool fractionalScaling;
 
-  // Brightness
+  
   final double brightness;
   final double maxBrightness;
   final bool brightnessSupported;
   final String brightnessMethod;
 
-  // Night light
+  
   final bool nightLight;
 
   final String? errorMessage;
@@ -51,7 +51,7 @@ class DisplaySettingsState extends Equatable {
     this.errorMessage,
   });
 
-  /// Creates a copy of this state with the given fields replaced
+  
   DisplaySettingsState copyWith({
     DisplaySettingsStatus? status,
     String? displayServer,

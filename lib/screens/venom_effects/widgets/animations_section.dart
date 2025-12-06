@@ -28,7 +28,7 @@ class AnimationsSection extends StatelessWidget {
           value: enabled,
           onChanged: onEnabledChanged,
         ),
-        // كلما زادت القيمة زادت سرعة الأنيميشن
+        
         SliderSetting(
           title: "Animation Speed",
           value: speed,

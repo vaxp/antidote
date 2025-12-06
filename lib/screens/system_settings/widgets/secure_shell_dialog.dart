@@ -22,7 +22,7 @@ class _SecureShellDialogState extends State<SecureShellDialog> {
       final result = await Process.run('systemctl', ['is-active', 'ssh']);
       setState(() => _sshEnabled = result.exitCode == 0);
     } catch (e) {
-      // Try alternative service name
+      
       try {
         final result2 = await Process.run('systemctl', ['is-active', 'sshd']);
         setState(() => _sshEnabled = result2.exitCode == 0);

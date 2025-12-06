@@ -1,9 +1,9 @@
 import 'package:equatable/equatable.dart';
 
-/// Status of power settings loading
+
 enum PowerSettingsStatus { initial, loading, loaded, error }
 
-/// State class for power settings
+
 class PowerSettingsState extends Equatable {
   final PowerSettingsStatus status;
   final double batteryLevel;
@@ -19,7 +19,7 @@ class PowerSettingsState extends Equatable {
     this.errorMessage,
   });
 
-  /// Creates a copy of this state with the given fields replaced
+  
   PowerSettingsState copyWith({
     PowerSettingsStatus? status,
     double? batteryLevel,

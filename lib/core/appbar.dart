@@ -108,7 +108,7 @@ class _VenomWindowButtonState extends State<VenomWindowButton> {
             boxShadow: _isHovered
                 ? [
                     BoxShadow(
-                      // ignore: deprecated_member_use
+                      
                       color: widget.color.withOpacity(0.8),
                       blurRadius: 8,
                       spreadRadius: 1,
@@ -123,7 +123,7 @@ class _VenomWindowButtonState extends State<VenomWindowButton> {
               child: Icon(
                 widget.icon,
                 size: 10,
-                // ignore: deprecated_member_use
+                
                 color: Colors.black.withOpacity(0.6),
               ),
             ),

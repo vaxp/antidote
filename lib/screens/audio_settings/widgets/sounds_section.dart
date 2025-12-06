@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'section_container.dart';
 import 'common_widgets.dart';
 
-/// Sounds section widget
+
 class SoundsSection extends StatelessWidget {
   const SoundsSection({super.key});
 

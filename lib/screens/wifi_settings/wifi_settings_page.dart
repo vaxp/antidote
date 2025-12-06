@@ -5,7 +5,7 @@ import 'package:antidote/screens/wifi_settings/widgets/wifi_header.dart';
 import 'package:antidote/screens/wifi_settings/widgets/networks_header.dart';
 import 'package:antidote/screens/wifi_settings/widgets/networks_list.dart';
 
-/// WiFi Settings Page using BLoC pattern
+
 class WiFiSettingsPage extends StatelessWidget {
   const WiFiSettingsPage({super.key});
   @override
@@ -17,7 +17,7 @@ class WiFiSettingsPage extends StatelessWidget {
   }
 }
 
-/// The main view widget that builds the UI
+
 class WiFiSettingsView extends StatelessWidget {
   const WiFiSettingsView({super.key});
 

@@ -4,16 +4,14 @@ import 'mouse_settings_event.dart';
 import 'mouse_settings_state.dart';
 import '../services/mouse_service.dart';
 
-/// BLoC for managing mouse settings state
+
 class MouseSettingsBloc extends Bloc<MouseSettingsEvent, MouseSettingsState> {
   final MouseService _mouseService;
-  Timer? _refreshTimer;
 
   MouseSettingsBloc({MouseService? mouseService})
     : _mouseService = mouseService ?? MouseService(),
       super(const MouseSettingsState()) {
     on<LoadMouseSettings>(_onLoadMouseSettings);
-    on<RefreshMouseSettings>(_onRefreshMouseSettings);
     on<ChangeTab>(_onChangeTab);
     on<SetPrimaryButton>(_onSetPrimaryButton);
     on<SetMousePointerSpeed>(_onSetMousePointerSpeed);
@@ -24,19 +22,6 @@ class MouseSettingsBloc extends Bloc<MouseSettingsEvent, MouseSettingsState> {
     on<SetTouchpadPointerSpeed>(_onSetTouchpadPointerSpeed);
     on<SetSecondaryClick>(_onSetSecondaryClick);
     on<SetTapToClick>(_onSetTapToClick);
-  }
-
-  void startPeriodicRefresh() {
-    _refreshTimer?.cancel();
-    _refreshTimer = Timer.periodic(
-      const Duration(seconds: 3),
-      (_) => add(const RefreshMouseSettings()),
-    );
-  }
-
-  void stopPeriodicRefresh() {
-    _refreshTimer?.cancel();
-    _refreshTimer = null;
   }
 
   Future<void> _onLoadMouseSettings(
@@ -72,8 +57,6 @@ class MouseSettingsBloc extends Bloc<MouseSettingsEvent, MouseSettingsState> {
           tapToClick: results[8] as bool,
         ),
       );
-
-      startPeriodicRefresh();
     } catch (e) {
       emit(
         state.copyWith(
@@ -82,40 +65,6 @@ class MouseSettingsBloc extends Bloc<MouseSettingsEvent, MouseSettingsState> {
         ),
       );
     }
-  }
-
-  Future<void> _onRefreshMouseSettings(
-    RefreshMouseSettings event,
-    Emitter<MouseSettingsState> emit,
-  ) async {
-    // Silent refresh, don't change status
-    try {
-      final results = await Future.wait([
-        _mouseService.getPrimaryButton(),
-        _mouseService.getMousePointerSpeed(),
-        _mouseService.getMouseAcceleration(),
-        _mouseService.getScrollDirection(),
-        _mouseService.getTouchpadEnabled(),
-        _mouseService.getDisableWhileTyping(),
-        _mouseService.getTouchpadPointerSpeed(),
-        _mouseService.getSecondaryClick(),
-        _mouseService.getTapToClick(),
-      ]);
-
-      emit(
-        state.copyWith(
-          primaryButton: results[0] as String,
-          mousePointerSpeed: results[1] as double,
-          mouseAcceleration: results[2] as bool,
-          scrollDirection: results[3] as String,
-          touchpadEnabled: results[4] as bool,
-          disableWhileTyping: results[5] as bool,
-          touchpadPointerSpeed: results[6] as double,
-          secondaryClick: results[7] as String,
-          tapToClick: results[8] as bool,
-        ),
-      );
-    } catch (_) {}
   }
 
   void _onChangeTab(ChangeTab event, Emitter<MouseSettingsState> emit) {
@@ -196,7 +145,6 @@ class MouseSettingsBloc extends Bloc<MouseSettingsEvent, MouseSettingsState> {
 
   @override
   Future<void> close() {
-    stopPeriodicRefresh();
     _mouseService.dispose();
     return super.close();
   }

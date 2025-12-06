@@ -4,7 +4,7 @@ import 'display_settings_state.dart';
 import '../services/display_service.dart';
 import '../models/display_resolution.dart';
 
-/// BLoC for managing display settings state
+
 class DisplaySettingsBloc
     extends Bloc<DisplaySettingsEvent, DisplaySettingsState> {
   final DisplayService _displayService;
@@ -29,11 +29,11 @@ class DisplaySettingsBloc
     emit(state.copyWith(status: DisplaySettingsStatus.loading));
 
     try {
-      // Detect display server
+      
       final displayServer = await _displayService.detectDisplayServer();
       emit(state.copyWith(displayServer: displayServer));
 
-      // Get display info
+      
       final displayInfo = await _displayService.getX11DisplayInfo();
       final availableResolutions = await _displayService
           .getX11AvailableResolutions();
@@ -53,7 +53,7 @@ class DisplaySettingsBloc
           aspectRatio: aspectRatio,
         );
 
-        // Find native resolution
+        
         if (availableResolutions.isNotEmpty) {
           nativeResolution = availableResolutions.firstWhere(
             (r) => r.isNative,
@@ -65,13 +65,13 @@ class DisplaySettingsBloc
             .getX11AvailableRefreshRates(width, height);
       }
 
-      // Get brightness info
+      
       final brightnessInfo = await _displayService.initBrightness();
 
-      // Get night light status
+      
       final nightLight = await _displayService.getNightLightStatus();
 
-      // Get scale
+      
       final scale = await _displayService.getScale();
 
       emit(
@@ -122,7 +122,7 @@ class DisplaySettingsBloc
     if (success) {
       emit(state.copyWith(currentResolution: event.resolution));
 
-      // Refresh available refresh rates
+      
       final refreshRates = await _displayService.getX11AvailableRefreshRates(
         event.resolution.width,
         event.resolution.height,

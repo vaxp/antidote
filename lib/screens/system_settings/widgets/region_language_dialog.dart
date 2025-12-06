@@ -20,13 +20,13 @@ class _RegionLanguageDialogState extends State<RegionLanguageDialog> {
 
   Future<void> _loadLanguageSettings() async {
     try {
-      // Get current language from locale
+      
       final langResult = await Process.run('locale', []);
       if (langResult.exitCode == 0) {
         final locale = langResult.stdout.toString();
-        // Parse locale to get language if needed
+        
         if (locale.contains('LANG=')) {
-          // Extract language from locale
+          
         }
       }
     } catch (e) {

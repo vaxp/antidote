@@ -1,4 +1,4 @@
-// Bluetooth Settings Feature Barrel File
+
 export 'bloc/bluetooth_settings_bloc.dart';
 export 'bloc/bluetooth_settings_event.dart';
 export 'bloc/bluetooth_settings_state.dart';

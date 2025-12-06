@@ -20,14 +20,14 @@ class _RemoteDesktopDialogState extends State<RemoteDesktopDialog> {
 
   Future<void> _loadRemoteDesktopSettings() async {
     try {
-      // Check if remote desktop is enabled (VNC/RDP)
+      
       final vncResult = await Process.run('systemctl', [
         'is-active',
         'vino-server',
       ]);
       setState(() => _remoteDesktopEnabled = vncResult.exitCode == 0);
 
-      // Check screen sharing (GNOME)
+      
       final sharingResult = await Process.run('gsettings', [
         'get',
         'org.gnome.desktop.remote-desktop.rdp',

@@ -5,7 +5,7 @@ import 'section_container.dart';
 import 'device_dropdown.dart';
 import 'sliders.dart';
 
-/// Input section widget
+
 class InputSection extends StatelessWidget {
   const InputSection({super.key});
 

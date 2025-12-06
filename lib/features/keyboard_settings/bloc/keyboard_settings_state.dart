@@ -1,15 +1,15 @@
 import 'package:equatable/equatable.dart';
 import '../models/input_source.dart';
 
-/// Status of keyboard settings loading/operations
+
 enum KeyboardSettingsStatus { initial, loading, loaded, error }
 
-/// State class for keyboard settings
+
 class KeyboardSettingsState extends Equatable {
   final KeyboardSettingsStatus status;
   final List<InputSource> currentSources;
   final List<InputSource> availableSources;
-  final String inputSourceSwitching; // 'all-windows' or 'per-window'
+  final String inputSourceSwitching; 
   final String alternateCharactersKey;
   final String composeKey;
   final String? errorMessage;
@@ -24,7 +24,7 @@ class KeyboardSettingsState extends Equatable {
     this.errorMessage,
   });
 
-  /// Creates a copy of this state with the given fields replaced
+  
   KeyboardSettingsState copyWith({
     KeyboardSettingsStatus? status,
     List<InputSource>? currentSources,

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// Toggle setting widget with label and optional description
+
 class ToggleSetting extends StatelessWidget {
   final String label;
   final bool value;
@@ -55,7 +55,7 @@ class ToggleSetting extends StatelessWidget {
   }
 }
 
-/// Clickable item widget for navigation
+
 class ClickableItem extends StatelessWidget {
   final String label;
   final String? value;

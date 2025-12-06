@@ -1,6 +1,6 @@
 import 'package:equatable/equatable.dart';
 
-/// Base class for all system settings events
+
 abstract class SystemSettingsEvent extends Equatable {
   const SystemSettingsEvent();
 
@@ -8,12 +8,12 @@ abstract class SystemSettingsEvent extends Equatable {
   List<Object?> get props => [];
 }
 
-/// Event to load initial settings
+
 class LoadSystemSettings extends SystemSettingsEvent {
   const LoadSystemSettings();
 }
 
-/// Event to show a specific dialog
+
 class ShowDialog extends SystemSettingsEvent {
   final SystemDialogType dialogType;
 
@@ -23,7 +23,7 @@ class ShowDialog extends SystemSettingsEvent {
   List<Object?> get props => [dialogType];
 }
 
-/// Types of dialogs in system settings
+
 enum SystemDialogType {
   regionLanguage,
   dateTime,
