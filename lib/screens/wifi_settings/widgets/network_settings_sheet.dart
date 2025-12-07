@@ -5,12 +5,14 @@ class NetworkSettingsSheet extends StatefulWidget {
   final ConnectionDetails details;
   final NetworkService service;
   final VoidCallback onSaved;
+  final VoidCallback? onForget;
 
   const NetworkSettingsSheet({
     super.key,
     required this.details,
     required this.service,
     required this.onSaved,
+    this.onForget,
   });
 
   @override
@@ -106,7 +108,11 @@ class _NetworkSettingsSheetState extends State<NetworkSettingsSheet> {
 
     if (confirmed == true && mounted) {
       await widget.service.forgetNetwork(widget.details.ssid);
-      if (mounted) Navigator.pop(context);
+      if (mounted) {
+        // Call onForget BEFORE pop to refresh data while context is valid
+        widget.onForget?.call();
+        Navigator.pop(context);
+      }
     }
   }
 

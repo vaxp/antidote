@@ -36,6 +36,10 @@ class NetworksList extends StatelessWidget {
             ),
           );
         },
+        onForget: () {
+          // Just refresh data - sheet already closed itself
+          context.read<WiFiSettingsBloc>().add(const RefreshNetworks());
+        },
       ),
     );
   }

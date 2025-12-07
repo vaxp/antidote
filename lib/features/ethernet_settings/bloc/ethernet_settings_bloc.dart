@@ -72,11 +72,33 @@ class EthernetSettingsBloc
   ) async {
     if (_networkService == null) return;
 
+    // Optimistic update - immediately update Switch UI
+    final updatedInterfaces = state.interfaces.map((iface) {
+      if (iface.name == event.name) {
+        return iface.copyWith(enabled: true);
+      }
+      return iface;
+    }).toList();
+    emit(state.copyWith(interfaces: updatedInterfaces));
+
     final success = await _networkService!.enableEthernet(event.name);
     if (success) {
+      // Refresh to get actual state from daemon
       add(const RefreshInterfaces());
     } else {
-      emit(state.copyWith(errorMessage: 'Failed to enable ${event.name}'));
+      // Revert on failure
+      final revertedInterfaces = state.interfaces.map((iface) {
+        if (iface.name == event.name) {
+          return iface.copyWith(enabled: false);
+        }
+        return iface;
+      }).toList();
+      emit(
+        state.copyWith(
+          interfaces: revertedInterfaces,
+          errorMessage: 'Failed to enable ${event.name}',
+        ),
+      );
     }
   }
 
@@ -86,11 +108,33 @@ class EthernetSettingsBloc
   ) async {
     if (_networkService == null) return;
 
+    // Optimistic update - immediately update Switch UI
+    final updatedInterfaces = state.interfaces.map((iface) {
+      if (iface.name == event.name) {
+        return iface.copyWith(enabled: false);
+      }
+      return iface;
+    }).toList();
+    emit(state.copyWith(interfaces: updatedInterfaces));
+
     final success = await _networkService!.disableEthernet(event.name);
     if (success) {
+      // Refresh to get actual state from daemon
       add(const RefreshInterfaces());
     } else {
-      emit(state.copyWith(errorMessage: 'Failed to disable ${event.name}'));
+      // Revert on failure
+      final revertedInterfaces = state.interfaces.map((iface) {
+        if (iface.name == event.name) {
+          return iface.copyWith(enabled: true);
+        }
+        return iface;
+      }).toList();
+      emit(
+        state.copyWith(
+          interfaces: revertedInterfaces,
+          errorMessage: 'Failed to disable ${event.name}',
+        ),
+      );
     }
   }
 

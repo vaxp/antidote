@@ -198,6 +198,27 @@ class EthernetInterface {
       enabled: (v[6] as DBusBoolean).value,
     );
   }
+
+  /// Creates a copy of this interface with optionally updated fields
+  EthernetInterface copyWith({
+    String? name,
+    String? macAddress,
+    String? ipAddress,
+    String? gateway,
+    int? speed,
+    bool? connected,
+    bool? enabled,
+  }) {
+    return EthernetInterface(
+      name: name ?? this.name,
+      macAddress: macAddress ?? this.macAddress,
+      ipAddress: ipAddress ?? this.ipAddress,
+      gateway: gateway ?? this.gateway,
+      speed: speed ?? this.speed,
+      connected: connected ?? this.connected,
+      enabled: enabled ?? this.enabled,
+    );
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
