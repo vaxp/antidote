@@ -24,19 +24,6 @@ class DeviceTile extends StatelessWidget {
         width: double.infinity,
         height: 100,
         borderRadius: 8,
-        linearGradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: device.connected
-              ? [Colors.blue.withOpacity(0.2), Colors.blue.withOpacity(0.1)]
-              : [
-                  Colors.white.withOpacity(0.05),
-                  Colors.white.withOpacity(0.02),
-                ],
-        ),
-        border: 1.2,
-        blur: 30,
-        borderGradient: const LinearGradient(colors: []),
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
         child: Row(
           children: [

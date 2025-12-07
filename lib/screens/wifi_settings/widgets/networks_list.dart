@@ -17,17 +17,7 @@ class NetworksList extends StatelessWidget {
             child: GlassmorphicContainer(
               width: double.infinity,
               borderRadius: 8,
-              linearGradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Colors.red.withOpacity(0.1),
-                  Colors.red.withOpacity(0.05),
-                ],
-              ),
-              border: 1.2,
-              blur: 40,
-              borderGradient: const LinearGradient(colors: []),
+
               padding: const EdgeInsets.all(16),
               child: Row(
                 children: [

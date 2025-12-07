@@ -38,18 +38,6 @@ class SystemThemeColorSection extends StatelessWidget {
           width: double.infinity,
           height: 400,
           borderRadius: 8,
-          blur: 10,
-          border: 1,
-          linearGradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [],
-          ),
-          borderGradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [],
-          ),
           child: Padding(
             padding: const EdgeInsets.all(20),
             child: Column(

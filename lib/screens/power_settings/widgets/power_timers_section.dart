@@ -19,26 +19,8 @@ class PowerTimersSection extends StatelessWidget {
           width: double.infinity,
           height: null,
           borderRadius: 8,
-          blur: 20,
           padding: const EdgeInsets.all(24),
           alignment: Alignment.center,
-          border: 1,
-          linearGradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              const Color.fromARGB(0, 0, 0, 0).withValues(alpha: 0.0),
-              const Color.fromARGB(0, 0, 0, 0).withValues(alpha: 0.0),
-            ],
-          ),
-          borderGradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              const Color.fromARGB(0, 0, 0, 0).withValues(alpha: 0.0),
-              const Color.fromARGB(0, 0, 0, 0).withValues(alpha: 0.0),
-            ],
-          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [

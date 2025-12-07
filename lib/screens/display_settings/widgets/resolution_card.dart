@@ -96,7 +96,7 @@ class ResolutionCard extends StatelessWidget {
                     value: state.currentResolution,
                     isExpanded: true,
                     underline: const SizedBox(),
-                    dropdownColor: const Color.fromARGB(255, 12, 12, 12),
+                    dropdownColor: const Color.fromARGB(87, 12, 12, 12),
                     style: const TextStyle(color: Colors.white, fontSize: 13),
                     hint: const Text(
                       'Select Resolution',

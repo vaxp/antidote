@@ -1,5 +1,4 @@
 import 'package:antidote/core/appbar.dart';
-import 'package:antidote/core/glassmorphic_container.dart';
 import 'package:antidote/core/venom_layout.dart';
 import 'package:flutter/material.dart';
 import 'package:window_manager/window_manager.dart';
@@ -67,27 +66,9 @@ class _SettingsHomePageState extends State<SettingsHomePage> {
         decoration: const BoxDecoration(color: Color.fromARGB(100, 0, 0, 0)),
         child: Row(
           children: [
-            GlassmorphicContainer(
+            Container(
               width: 240,
-              height: double.infinity,
-              borderRadius: 0,
-              border: 0,
-              blur: 0,
-              borderGradient: const LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [],
-              ),
               padding: const EdgeInsets.all(10),
-              alignment: Alignment.topCenter,
-              linearGradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  const Color.fromARGB(0, 0, 0, 0),
-                  const Color.fromARGB(0, 0, 0, 0),
-                ],
-              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [

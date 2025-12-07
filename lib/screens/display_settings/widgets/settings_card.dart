@@ -1,4 +1,3 @@
-import 'package:antidote/core/glassmorphic_container.dart';
 import 'package:flutter/material.dart';
 
 class SettingsCard extends StatelessWidget {
@@ -9,22 +8,16 @@ class SettingsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GlassmorphicContainer(
+
+    return Container(
       width: double.infinity,
       height: height,
-      borderRadius: 20,
-      linearGradient: LinearGradient(
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-        colors: [
-          const Color.fromARGB(30, 17, 17, 17).withOpacity(0.12),
-          const Color.fromARGB(30, 17, 17, 17).withOpacity(0.08),
-        ],
-      ),
-      border: 1.2,
-      blur: 40,
-      borderGradient: const LinearGradient(colors: []),
       padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.03),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+      ),
       child: child,
     );
   }

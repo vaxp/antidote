@@ -20,21 +20,7 @@ class NetworkTile extends StatelessWidget {
       width: double.infinity,
       height: 72,
       borderRadius: 8,
-      linearGradient: LinearGradient(
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-        colors: [
-          network.isConnected
-              ? Colors.teal.withOpacity(0.15)
-              : Colors.white.withOpacity(0.05),
-          network.isConnected
-              ? Colors.teal.withOpacity(0.08)
-              : Colors.white.withOpacity(0.03),
-        ],
-      ),
-      border: 1.2,
-      blur: 30,
-      borderGradient: const LinearGradient(colors: []),
+
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
       child: Row(
         children: [

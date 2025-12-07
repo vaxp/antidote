@@ -21,7 +21,7 @@ class DisplaySelector extends StatelessWidget {
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: Colors.white.withValues(alpha: 0.03),
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(8),
             border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
           ),
           child: Column(
@@ -129,7 +129,7 @@ class _DisplayCard extends StatelessWidget {
                   Icons.desktop_windows_rounded,
                   size: 16,
                   color: isSelected
-                      ? const Color(0xFF7AA2F7)
+                      ? const Color.fromARGB(255, 0, 255, 242)
                       : Colors.white.withValues(alpha: 0.5),
                 ),
                 const SizedBox(width: 6),
