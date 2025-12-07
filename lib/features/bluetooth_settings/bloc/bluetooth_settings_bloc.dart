@@ -1,68 +1,67 @@
 import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter/foundation.dart';
+import 'package:antidote/core/services/network_service.dart';
 import 'bluetooth_settings_event.dart';
 import 'bluetooth_settings_state.dart';
-import '../services/bluetooth_service.dart';
-
 
 class BluetoothSettingsBloc
     extends Bloc<BluetoothSettingsEvent, BluetoothSettingsState> {
-  final BluetoothService _bluetoothService;
+  NetworkService? _networkService;
   Timer? _scanTimer;
 
-  BluetoothSettingsBloc({BluetoothService? bluetoothService})
-    : _bluetoothService = bluetoothService ?? BluetoothService(),
-      super(const BluetoothSettingsState()) {
+  BluetoothSettingsBloc() : super(const BluetoothSettingsState()) {
     on<InitializeBluetooth>(_onInitializeBluetooth);
     on<ToggleBluetooth>(_onToggleBluetooth);
     on<StartBluetoothScan>(_onStartBluetoothScan);
     on<StopBluetoothScan>(_onStopBluetoothScan);
     on<RefreshDevices>(_onRefreshDevices);
+    on<PairDevice>(_onPairDevice);
     on<ConnectDevice>(_onConnectDevice);
     on<DisconnectDevice>(_onDisconnectDevice);
-    on<DevicesUpdated>(_onDevicesUpdated);
-    on<BluetoothStatusChanged>(_onBluetoothStatusChanged);
-
-    
-    _bluetoothService.onDevicesChanged = (devices) {
-      add(DevicesUpdated(devices));
-    };
+    on<RemoveDevice>(_onRemoveDevice);
   }
 
   Future<void> _onInitializeBluetooth(
     InitializeBluetooth event,
     Emitter<BluetoothSettingsState> emit,
   ) async {
-    emit(state.copyWith(status: BluetoothSettingsStatus.initializing));
+    emit(state.copyWith(status: BluetoothSettingsStatus.loading));
+
+    _networkService = NetworkService();
+    final connected = await _networkService!.connect().timeout(
+      const Duration(seconds: 3),
+      onTimeout: () => false,
+    );
+
+    if (!connected) {
+      emit(
+        state.copyWith(
+          status: BluetoothSettingsStatus.error,
+          errorMessage: 'Failed to connect to Network Daemon',
+        ),
+      );
+      return;
+    }
 
     try {
-      final adapterPath = await _bluetoothService.findAdapter();
-      final hasAdapter = adapterPath != null;
-
-      bool bluetoothEnabled = false;
-      if (hasAdapter) {
-        bluetoothEnabled = await _bluetoothService.isBluetoothEnabled();
-        _bluetoothService.listenToSignals();
-      }
+      final btStatus = await _networkService!.getBluetoothStatus();
+      final devices = await _networkService!.getBluetoothDevices();
 
       emit(
         state.copyWith(
           status: BluetoothSettingsStatus.ready,
-          hasAdapter: hasAdapter,
-          adapterPath: adapterPath,
-          bluetoothEnabled: bluetoothEnabled,
+          bluetoothEnabled: btStatus.powered,
+          adapterStatus: btStatus,
+          devices: devices,
         ),
       );
-
-      
-      if (bluetoothEnabled && adapterPath != null) {
-        add(const StartBluetoothScan());
-      }
     } catch (e) {
+      debugPrint('Bluetooth init error: $e');
       emit(
         state.copyWith(
           status: BluetoothSettingsStatus.error,
-          errorMessage: 'Failed to initialize bluetooth: $e',
+          errorMessage: 'Failed to load Bluetooth settings: $e',
         ),
       );
     }
@@ -72,15 +71,19 @@ class BluetoothSettingsBloc
     ToggleBluetooth event,
     Emitter<BluetoothSettingsState> emit,
   ) async {
-    final enabled = await _bluetoothService.toggleBluetooth(event.enabled);
-    emit(state.copyWith(bluetoothEnabled: enabled));
+    if (_networkService == null) return;
 
-    if (enabled && state.adapterPath != null) {
+    emit(state.copyWith(bluetoothEnabled: event.enabled));
+
+    final success = await _networkService!.setBluetoothPowered(event.enabled);
+    if (success) {
       await Future.delayed(const Duration(milliseconds: 500));
-      add(const StartBluetoothScan());
+      add(const RefreshDevices());
+      if (event.enabled) {
+        add(const StartBluetoothScan());
+      }
     } else {
-      add(const StopBluetoothScan());
-      emit(state.copyWith(devices: []));
+      emit(state.copyWith(bluetoothEnabled: !event.enabled));
     }
   }
 
@@ -88,22 +91,26 @@ class BluetoothSettingsBloc
     StartBluetoothScan event,
     Emitter<BluetoothSettingsState> emit,
   ) async {
-    if (state.adapterPath == null || state.isScanning) return;
+    if (_networkService == null || state.isScanning) return;
 
     emit(state.copyWith(isScanning: true));
 
-    final success = await _bluetoothService.startScan(state.adapterPath!);
+    final success = await _networkService!.startBluetoothScan();
     if (success) {
-      
-      final devices = await _bluetoothService.fetchDevices();
-      emit(state.copyWith(devices: devices));
-
-      
+      // Auto-stop scan after 10 seconds
       _scanTimer?.cancel();
-      _scanTimer = Timer.periodic(
-        const Duration(seconds: 2),
-        (_) => add(const RefreshDevices()),
-      );
+      _scanTimer = Timer(const Duration(seconds: 10), () {
+        add(const StopBluetoothScan());
+      });
+
+      // Refresh devices periodically during scan
+      Timer.periodic(const Duration(seconds: 2), (timer) {
+        if (!state.isScanning) {
+          timer.cancel();
+          return;
+        }
+        add(const RefreshDevices());
+      });
     } else {
       emit(state.copyWith(isScanning: false));
     }
@@ -116,8 +123,8 @@ class BluetoothSettingsBloc
     _scanTimer?.cancel();
     _scanTimer = null;
 
-    if (state.adapterPath != null) {
-      await _bluetoothService.stopScan(state.adapterPath!);
+    if (_networkService != null) {
+      await _networkService!.stopBluetoothScan();
     }
     emit(state.copyWith(isScanning: false));
   }
@@ -126,55 +133,76 @@ class BluetoothSettingsBloc
     RefreshDevices event,
     Emitter<BluetoothSettingsState> emit,
   ) async {
-    final devices = await _bluetoothService.fetchDevices();
-    emit(state.copyWith(devices: devices));
+    if (_networkService == null) return;
+
+    final btStatus = await _networkService!.getBluetoothStatus();
+    final devices = await _networkService!.getBluetoothDevices();
+
+    emit(
+      state.copyWith(
+        bluetoothEnabled: btStatus.powered,
+        adapterStatus: btStatus,
+        devices: devices,
+      ),
+    );
+  }
+
+  Future<void> _onPairDevice(
+    PairDevice event,
+    Emitter<BluetoothSettingsState> emit,
+  ) async {
+    if (_networkService == null) return;
+
+    final success = await _networkService!.pairDevice(event.address);
+    if (success) {
+      add(const RefreshDevices());
+    } else {
+      emit(state.copyWith(errorMessage: 'Failed to pair device'));
+    }
   }
 
   Future<void> _onConnectDevice(
     ConnectDevice event,
     Emitter<BluetoothSettingsState> emit,
   ) async {
-    if (state.isScanning) {
-      add(const StopBluetoothScan());
-      await Future.delayed(const Duration(milliseconds: 200));
-    }
+    if (_networkService == null) return;
 
-    final success = await _bluetoothService.connectDevice(event.devicePath);
-    if (!success) {
+    final success = await _networkService!.connectDevice(event.address);
+    if (success) {
+      add(const RefreshDevices());
+    } else {
       emit(state.copyWith(errorMessage: 'Failed to connect device'));
     }
-
-    
-    add(const RefreshDevices());
-    add(const StartBluetoothScan());
   }
 
   Future<void> _onDisconnectDevice(
     DisconnectDevice event,
     Emitter<BluetoothSettingsState> emit,
   ) async {
-    await _bluetoothService.disconnectDevice(event.devicePath);
+    if (_networkService == null) return;
+
+    await _networkService!.disconnectDevice(event.address);
     add(const RefreshDevices());
   }
 
-  void _onDevicesUpdated(
-    DevicesUpdated event,
+  Future<void> _onRemoveDevice(
+    RemoveDevice event,
     Emitter<BluetoothSettingsState> emit,
-  ) {
-    emit(state.copyWith(devices: event.devices));
-  }
+  ) async {
+    if (_networkService == null) return;
 
-  void _onBluetoothStatusChanged(
-    BluetoothStatusChanged event,
-    Emitter<BluetoothSettingsState> emit,
-  ) {
-    emit(state.copyWith(bluetoothEnabled: event.enabled));
+    final success = await _networkService!.removeDevice(event.address);
+    if (success) {
+      add(const RefreshDevices());
+    } else {
+      emit(state.copyWith(errorMessage: 'Failed to remove device'));
+    }
   }
 
   @override
   Future<void> close() {
     _scanTimer?.cancel();
-    _bluetoothService.dispose();
+    _networkService?.disconnect();
     return super.close();
   }
 }

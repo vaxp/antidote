@@ -1,5 +1,4 @@
 import 'package:equatable/equatable.dart';
-import '../models/display_resolution.dart';
 import 'package:antidote/core/services/venom_display_service.dart';
 
 enum DisplaySettingsStatus { initial, loading, loaded, error }
@@ -8,9 +7,8 @@ class DisplaySettingsState extends Equatable {
   final DisplaySettingsStatus status;
   final String displayServer;
   final String orientation;
-  final DisplayResolution? currentResolution;
-  final DisplayResolution? nativeResolution;
-  final List<DisplayResolution> availableResolutions;
+  final DisplayMode? currentMode;
+  final List<DisplayMode> availableModes;
   final String refreshRate;
   final List<String> availableRefreshRates;
   final int scale;
@@ -28,9 +26,8 @@ class DisplaySettingsState extends Equatable {
     this.status = DisplaySettingsStatus.initial,
     this.displayServer = 'Unknown',
     this.orientation = 'Landscape',
-    this.currentResolution,
-    this.nativeResolution,
-    this.availableResolutions = const [],
+    this.currentMode,
+    this.availableModes = const [],
     this.refreshRate = '60.00 Hz',
     this.availableRefreshRates = const [],
     this.scale = 100,
@@ -54,13 +51,14 @@ class DisplaySettingsState extends Equatable {
     }
   }
 
+  String get currentResolution => currentMode?.resolution ?? '';
+
   DisplaySettingsState copyWith({
     DisplaySettingsStatus? status,
     String? displayServer,
     String? orientation,
-    DisplayResolution? currentResolution,
-    DisplayResolution? nativeResolution,
-    List<DisplayResolution>? availableResolutions,
+    DisplayMode? currentMode,
+    List<DisplayMode>? availableModes,
     String? refreshRate,
     List<String>? availableRefreshRates,
     int? scale,
@@ -78,9 +76,8 @@ class DisplaySettingsState extends Equatable {
       status: status ?? this.status,
       displayServer: displayServer ?? this.displayServer,
       orientation: orientation ?? this.orientation,
-      currentResolution: currentResolution ?? this.currentResolution,
-      nativeResolution: nativeResolution ?? this.nativeResolution,
-      availableResolutions: availableResolutions ?? this.availableResolutions,
+      currentMode: currentMode ?? this.currentMode,
+      availableModes: availableModes ?? this.availableModes,
       refreshRate: refreshRate ?? this.refreshRate,
       availableRefreshRates:
           availableRefreshRates ?? this.availableRefreshRates,
@@ -102,9 +99,8 @@ class DisplaySettingsState extends Equatable {
     status,
     displayServer,
     orientation,
-    currentResolution,
-    nativeResolution,
-    availableResolutions,
+    currentMode,
+    availableModes,
     refreshRate,
     availableRefreshRates,
     scale,

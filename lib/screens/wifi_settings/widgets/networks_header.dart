@@ -36,13 +36,13 @@ class NetworksHeader extends StatelessWidget {
               IconButton(
                 onPressed: state.wifiEnabled
                     ? () => context.read<WiFiSettingsBloc>().add(
-                        const StartWiFiScan(),
+                        const RefreshNetworks(),
                       )
                     : null,
                 icon: const Icon(Icons.refresh_rounded),
                 color: state.wifiEnabled
                     ? Colors.white54
-                    : Colors.white.withOpacity(0.3),
+                    : Colors.white.withValues(alpha: 0.3),
               ),
           ],
         );

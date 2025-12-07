@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:antidote/features/display_settings/display_settings.dart';
-import 'package:antidote/core/services/venom_display_service.dart';
 
 class DisplaySelector extends StatelessWidget {
   const DisplaySelector({super.key});
@@ -65,13 +64,9 @@ class DisplaySelector extends StatelessWidget {
                       onSetPrimary: () => context
                           .read<DisplaySettingsBloc>()
                           .add(SetPrimaryDisplay(display.name)),
-                      onToggle: (enabled) =>
-                          context.read<DisplaySettingsBloc>().add(
-                            ToggleDisplayEnabled(
-                              displayName: display.name,
-                              enabled: enabled,
-                            ),
-                          ),
+                      onToggle: (enabled) => context
+                          .read<DisplaySettingsBloc>()
+                          .add(ToggleDisplayEnabled(display.name, enabled)),
                     );
                   },
                 ),

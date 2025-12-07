@@ -5,7 +5,6 @@ import 'package:antidote/screens/wifi_settings/widgets/wifi_header.dart';
 import 'package:antidote/screens/wifi_settings/widgets/networks_header.dart';
 import 'package:antidote/screens/wifi_settings/widgets/networks_list.dart';
 
-
 class WiFiSettingsPage extends StatelessWidget {
   const WiFiSettingsPage({super.key});
   @override
@@ -16,7 +15,6 @@ class WiFiSettingsPage extends StatelessWidget {
     );
   }
 }
-
 
 class WiFiSettingsView extends StatelessWidget {
   const WiFiSettingsView({super.key});
@@ -30,9 +28,9 @@ class WiFiSettingsView extends StatelessWidget {
       listener: (context, state) async {
         if (state.passwordRequiredFor != null) {
           final password = await _showPasswordDialog(context);
-          if (password != null && context.mounted) {
+          if (password != null && password.isNotEmpty && context.mounted) {
             context.read<WiFiSettingsBloc>().add(
-              ConnectToNetwork(state.passwordRequiredFor!, password: password),
+              ConnectToNetwork(state.passwordRequiredFor!, password),
             );
           }
         }

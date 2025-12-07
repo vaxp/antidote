@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:antidote/screens/wifi_settings/wifi_settings_page.dart';
 import 'package:antidote/screens/bluetooth_settings/bluetooth_settings_page.dart';
+import 'package:antidote/screens/ethernet_settings/ethernet_settings_page.dart';
 import 'package:antidote/screens/venom_effects/venom_effects.dart';
 import 'package:antidote/screens/apps_settings/apps_settings_page.dart';
 import 'package:antidote/screens/display_settings/display_settings_page.dart';
@@ -32,6 +33,11 @@ const List<SettingsPageItem> settingsPages = [
     label: 'Bluetooth',
     icon: Icons.bluetooth_rounded,
     page: BluetoothSettingsPage(),
+  ),
+  SettingsPageItem(
+    label: 'Ethernet',
+    icon: Icons.cable_rounded,
+    page: EthernetSettingsPage(),
   ),
   SettingsPageItem(
     label: 'Venom Effects',

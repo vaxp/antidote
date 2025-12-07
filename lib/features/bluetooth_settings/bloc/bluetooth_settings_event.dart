@@ -1,5 +1,8 @@
 import 'package:equatable/equatable.dart';
 
+// Re-export Bluetooth models from network service
+export 'package:antidote/core/services/network_service.dart'
+    show BluetoothDevice, BluetoothStatus;
 
 abstract class BluetoothSettingsEvent extends Equatable {
   const BluetoothSettingsEvent();
@@ -8,94 +11,58 @@ abstract class BluetoothSettingsEvent extends Equatable {
   List<Object?> get props => [];
 }
 
-
 class InitializeBluetooth extends BluetoothSettingsEvent {
   const InitializeBluetooth();
 }
 
-
 class ToggleBluetooth extends BluetoothSettingsEvent {
   final bool enabled;
-
   const ToggleBluetooth(this.enabled);
 
   @override
   List<Object?> get props => [enabled];
 }
 
-
 class StartBluetoothScan extends BluetoothSettingsEvent {
   const StartBluetoothScan();
 }
-
 
 class StopBluetoothScan extends BluetoothSettingsEvent {
   const StopBluetoothScan();
 }
 
-
 class RefreshDevices extends BluetoothSettingsEvent {
   const RefreshDevices();
 }
 
+class PairDevice extends BluetoothSettingsEvent {
+  final String address;
+  const PairDevice(this.address);
+
+  @override
+  List<Object?> get props => [address];
+}
 
 class ConnectDevice extends BluetoothSettingsEvent {
-  final String devicePath;
-
-  const ConnectDevice(this.devicePath);
+  final String address;
+  const ConnectDevice(this.address);
 
   @override
-  List<Object?> get props => [devicePath];
+  List<Object?> get props => [address];
 }
-
 
 class DisconnectDevice extends BluetoothSettingsEvent {
-  final String devicePath;
-
-  const DisconnectDevice(this.devicePath);
-
-  @override
-  List<Object?> get props => [devicePath];
-}
-
-
-class DevicesUpdated extends BluetoothSettingsEvent {
-  final List<BluetoothDevice> devices;
-
-  const DevicesUpdated(this.devices);
-
-  @override
-  List<Object?> get props => [devices];
-}
-
-
-class BluetoothStatusChanged extends BluetoothSettingsEvent {
-  final bool enabled;
-
-  const BluetoothStatusChanged(this.enabled);
-
-  @override
-  List<Object?> get props => [enabled];
-}
-
-
-class BluetoothDevice extends Equatable {
-  final String path;
-  final String name;
   final String address;
-  final bool connected;
-  final bool paired;
-  final int rssi;
-
-  const BluetoothDevice({
-    required this.path,
-    required this.name,
-    required this.address,
-    required this.connected,
-    required this.paired,
-    required this.rssi,
-  });
+  const DisconnectDevice(this.address);
 
   @override
-  List<Object?> get props => [path, name, address, connected, paired, rssi];
+  List<Object?> get props => [address];
+}
+
+class RemoveDevice extends BluetoothSettingsEvent {
+  final String address;
+  const RemoveDevice(this.address);
+
+  @override
+  List<Object?> get props => [address];
 }

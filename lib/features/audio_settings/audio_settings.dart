@@ -1,6 +1,7 @@
-
+// Audio Settings Feature
 export 'bloc/audio_settings_bloc.dart';
 export 'bloc/audio_settings_event.dart';
 export 'bloc/audio_settings_state.dart';
-export 'models/audio_device.dart';
-export 'services/audio_service.dart';
+// Re-export D-Bus models for convenience
+export 'package:antidote/core/services/audio_service.dart'
+    show AudioDevice, AppStream, AudioCard, AudioProfile;

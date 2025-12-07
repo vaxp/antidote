@@ -20,7 +20,6 @@ class NetworkTile extends StatelessWidget {
       width: double.infinity,
       height: 72,
       borderRadius: 8,
-
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
       child: Row(
         children: [
@@ -32,7 +31,7 @@ class NetworkTile extends StatelessWidget {
                 : network.strength > 40
                 ? Icons.network_wifi_2_bar_rounded
                 : Icons.network_wifi_1_bar_rounded,
-            color: network.isConnected ? Colors.tealAccent : Colors.white54,
+            color: network.connected ? Colors.tealAccent : Colors.white54,
             size: 24,
           ),
           const SizedBox(width: 16),
@@ -45,12 +44,12 @@ class NetworkTile extends StatelessWidget {
                   children: [
                     Expanded(
                       child: Text(
-                        network.ssid,
+                        network.ssid.isEmpty ? network.bssid : network.ssid,
                         style: TextStyle(
-                          color: network.isConnected
+                          color: network.connected
                               ? Colors.white
                               : Colors.white70,
-                          fontWeight: network.isConnected
+                          fontWeight: network.connected
                               ? FontWeight.bold
                               : FontWeight.normal,
                           fontSize: 15,
@@ -58,26 +57,24 @@ class NetworkTile extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                    if (network.isSecure)
+                    if (network.secured)
                       Padding(
                         padding: const EdgeInsets.only(left: 8),
                         child: Icon(
                           Icons.lock_rounded,
                           size: 14,
-                          color: Colors.white.withOpacity(0.3),
+                          color: Colors.white.withValues(alpha: 0.3),
                         ),
                       ),
                   ],
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  network.isConnected
+                  network.connected
                       ? 'Connected'
-                      : network.isSaved
-                      ? 'Saved'
-                      : '${network.strength}% signal',
+                      : '${network.band} • ${network.strength}%',
                   style: TextStyle(
-                    color: network.isConnected
+                    color: network.connected
                         ? Colors.tealAccent
                         : Colors.white38,
                     fontSize: 12,
@@ -93,27 +90,18 @@ class NetworkTile extends StatelessWidget {
               height: 24,
               child: CupertinoActivityIndicator(color: Colors.tealAccent),
             )
-          else if (network.isConnected)
+          else if (network.connected)
             const Icon(
               Icons.check_circle_rounded,
               color: Colors.tealAccent,
               size: 24,
-            )
-          else if (network.isSaved)
-            IconButton(
-              icon: const Icon(Icons.close_rounded, size: 18),
-              color: Colors.white38,
-              onPressed: () =>
-                  context.read<WiFiSettingsBloc>().add(ForgetNetwork(network)),
-              padding: EdgeInsets.zero,
-              visualDensity: VisualDensity.compact,
             )
           else
             Material(
               color: Colors.transparent,
               child: InkWell(
                 onTap: () => context.read<WiFiSettingsBloc>().add(
-                  ConnectToNetwork(network),
+                  ConnectToNetwork(network, ''),
                 ),
                 borderRadius: BorderRadius.circular(8),
                 child: const Padding(

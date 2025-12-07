@@ -4,7 +4,6 @@ import 'package:flutter/foundation.dart';
 import 'package:antidote/core/services/venom_display_service.dart';
 import 'display_settings_event.dart';
 import 'display_settings_state.dart';
-import '../models/display_resolution.dart';
 import '../../power_settings/services/power_service.dart';
 
 class DisplaySettingsBloc
@@ -79,9 +78,7 @@ class DisplaySettingsBloc
         ),
       );
 
-      if (connectedDisplays.isEmpty) {
-        return;
-      }
+      if (connectedDisplays.isEmpty) return;
 
       final primary = connectedDisplays.firstWhere(
         (d) => d.isPrimary,
@@ -89,7 +86,6 @@ class DisplaySettingsBloc
       );
 
       add(SelectDisplay(primary.name));
-
       _loadBrightnessInBackground(emit);
     } catch (e) {
       debugPrint('Display init error: $e');
@@ -174,21 +170,26 @@ class DisplaySettingsBloc
       orElse: () => state.displays.first,
     );
 
-    final resolutions = _modesToResolutions(modes);
-    final refreshRates = _getRefreshRatesForResolution(
-      modes,
-      display.width,
-      display.height,
-    );
+    // Find current mode
+    DisplayMode? currentMode;
+    try {
+      currentMode = modes.firstWhere(
+        (m) => m.width == display.width && m.height == display.height,
+      );
+    } catch (_) {
+      if (modes.isNotEmpty) currentMode = modes.first;
+    }
+
+    // Get refresh rates for current resolution
+    final refreshRates = modes
+        .where((m) => m.width == display.width && m.height == display.height)
+        .map((m) => m.rateString)
+        .toList();
 
     emit(
       state.copyWith(
-        currentResolution: DisplayResolution(
-          width: display.width,
-          height: display.height,
-          aspectRatio: _calculateAspectRatio(display.width, display.height),
-        ),
-        availableResolutions: resolutions,
+        currentMode: currentMode,
+        availableModes: modes,
         refreshRate: display.rateString,
         availableRefreshRates: refreshRates,
         orientation: _rotationToOrientation(rotation),
@@ -220,21 +221,22 @@ class DisplaySettingsBloc
     final displayName = state.selectedDisplayName;
     if (displayName == null || _displayService == null) return;
 
-    emit(state.copyWith(currentResolution: event.resolution));
+    emit(state.copyWith(currentMode: event.mode));
 
     final success = await _displayService!.setResolution(
       displayName,
-      event.resolution.width,
-      event.resolution.height,
+      event.mode.width,
+      event.mode.height,
     );
 
     if (success) {
       final modes = _modesCache[displayName] ?? [];
-      final refreshRates = _getRefreshRatesForResolution(
-        modes,
-        event.resolution.width,
-        event.resolution.height,
-      );
+      final refreshRates = modes
+          .where(
+            (m) => m.width == event.mode.width && m.height == event.mode.height,
+          )
+          .map((m) => m.rateString)
+          .toList();
       emit(state.copyWith(availableRefreshRates: refreshRates));
     }
   }
@@ -309,9 +311,7 @@ class DisplaySettingsBloc
     } else {
       success = await _displayService!.disableOutput(event.displayName);
     }
-    if (success) {
-      add(const RefreshDisplays());
-    }
+    if (success) add(const RefreshDisplays());
   }
 
   Future<void> _onSetPrimaryDisplay(
@@ -321,9 +321,7 @@ class DisplaySettingsBloc
     if (_displayService == null) return;
 
     final success = await _displayService!.setPrimary(event.displayName);
-    if (success) {
-      add(const RefreshDisplays());
-    }
+    if (success) add(const RefreshDisplays());
   }
 
   Future<void> _onSetMirrorMode(
@@ -341,9 +339,7 @@ class DisplaySettingsBloc
     } else {
       success = await _displayService!.disableMirror(event.sourceDisplay);
     }
-    if (success) {
-      add(const RefreshDisplays());
-    }
+    if (success) add(const RefreshDisplays());
   }
 
   Future<void> _onSaveDisplayProfile(
@@ -395,42 +391,6 @@ class DisplaySettingsBloc
     _rotationCache.remove(event.displayName);
     _scaleCache.remove(event.displayName);
     add(const RefreshDisplays());
-  }
-
-  List<DisplayResolution> _modesToResolutions(List<DisplayMode> modes) {
-    final seen = <String>{};
-    final resolutions = <DisplayResolution>[];
-    for (final mode in modes) {
-      final key = '${mode.width}x${mode.height}';
-      if (!seen.contains(key)) {
-        seen.add(key);
-        resolutions.add(
-          DisplayResolution(
-            width: mode.width,
-            height: mode.height,
-            aspectRatio: _calculateAspectRatio(mode.width, mode.height),
-          ),
-        );
-      }
-    }
-    return resolutions;
-  }
-
-  List<String> _getRefreshRatesForResolution(
-    List<DisplayMode> modes,
-    int width,
-    int height,
-  ) {
-    return modes
-        .where((m) => m.width == width && m.height == height)
-        .map((m) => m.rateString)
-        .toList();
-  }
-
-  String _calculateAspectRatio(int width, int height) {
-    int gcd(int a, int b) => b == 0 ? a : gcd(b, a % b);
-    final g = gcd(width, height);
-    return '${width ~/ g}:${height ~/ g}';
   }
 
   String _rotationToOrientation(RotationType rotation) {

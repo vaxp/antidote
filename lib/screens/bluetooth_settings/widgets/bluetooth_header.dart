@@ -10,7 +10,7 @@ class BluetoothHeader extends StatelessWidget {
     return BlocBuilder<BluetoothSettingsBloc, BluetoothSettingsState>(
       buildWhen: (previous, current) =>
           previous.bluetoothEnabled != current.bluetoothEnabled ||
-          previous.hasAdapter != current.hasAdapter ||
+          previous.adapterStatus != current.adapterStatus ||
           previous.status != current.status,
       builder: (context, state) {
         return Column(
@@ -29,12 +29,26 @@ class BluetoothHeader extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  'Manage paired and nearby devices',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.white.withOpacity(0.6),
-                  ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Manage paired and nearby devices',
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Colors.white.withValues(alpha: 0.6),
+                      ),
+                    ),
+                    if (state.adapterStatus != null &&
+                        state.adapterStatus!.name.isNotEmpty)
+                      Text(
+                        state.adapterStatus!.name,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.white.withValues(alpha: 0.4),
+                        ),
+                      ),
+                  ],
                 ),
                 Row(
                   children: [
@@ -42,21 +56,21 @@ class BluetoothHeader extends StatelessWidget {
                       state.bluetoothEnabled ? 'On' : 'Off',
                       style: TextStyle(
                         fontSize: 14,
-                        color: Colors.white.withOpacity(0.7),
+                        color: Colors.white.withValues(alpha: 0.7),
                         fontWeight: FontWeight.w500,
                       ),
                     ),
                     const SizedBox(width: 12),
                     Switch(
                       value: state.bluetoothEnabled,
-                      onChanged:
-                          (!state.hasAdapter ||
-                              state.status ==
-                                  BluetoothSettingsStatus.initializing)
+                      onChanged: state.status == BluetoothSettingsStatus.loading
                           ? null
                           : (value) => context
                                 .read<BluetoothSettingsBloc>()
                                 .add(ToggleBluetooth(value)),
+                      activeTrackColor: Colors.blueAccent.withValues(
+                        alpha: 0.5,
+                      ),
                       activeColor: Colors.blueAccent,
                     ),
                   ],

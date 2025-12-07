@@ -1,5 +1,5 @@
 import 'package:equatable/equatable.dart';
-import '../models/display_resolution.dart';
+import 'package:antidote/core/services/venom_display_service.dart';
 
 abstract class DisplaySettingsEvent extends Equatable {
   const DisplaySettingsEvent();
@@ -18,7 +18,6 @@ class RefreshDisplays extends DisplaySettingsEvent {
 
 class SelectDisplay extends DisplaySettingsEvent {
   final String displayName;
-
   const SelectDisplay(this.displayName);
 
   @override
@@ -27,7 +26,6 @@ class SelectDisplay extends DisplaySettingsEvent {
 
 class SetOrientation extends DisplaySettingsEvent {
   final String orientation;
-
   const SetOrientation(this.orientation);
 
   @override
@@ -35,17 +33,15 @@ class SetOrientation extends DisplaySettingsEvent {
 }
 
 class SetResolution extends DisplaySettingsEvent {
-  final DisplayResolution resolution;
-
-  const SetResolution(this.resolution);
+  final DisplayMode mode;
+  const SetResolution(this.mode);
 
   @override
-  List<Object?> get props => [resolution];
+  List<Object?> get props => [mode];
 }
 
 class SetRefreshRate extends DisplaySettingsEvent {
   final String refreshRate;
-
   const SetRefreshRate(this.refreshRate);
 
   @override
@@ -54,7 +50,6 @@ class SetRefreshRate extends DisplaySettingsEvent {
 
 class SetBrightness extends DisplaySettingsEvent {
   final double brightness;
-
   const SetBrightness(this.brightness);
 
   @override
@@ -63,7 +58,6 @@ class SetBrightness extends DisplaySettingsEvent {
 
 class SetScale extends DisplaySettingsEvent {
   final int scale;
-
   const SetScale(this.scale);
 
   @override
@@ -72,7 +66,6 @@ class SetScale extends DisplaySettingsEvent {
 
 class SetFractionalScaling extends DisplaySettingsEvent {
   final bool enabled;
-
   const SetFractionalScaling(this.enabled);
 
   @override
@@ -82,11 +75,7 @@ class SetFractionalScaling extends DisplaySettingsEvent {
 class ToggleDisplayEnabled extends DisplaySettingsEvent {
   final String displayName;
   final bool enabled;
-
-  const ToggleDisplayEnabled({
-    required this.displayName,
-    required this.enabled,
-  });
+  const ToggleDisplayEnabled(this.displayName, this.enabled);
 
   @override
   List<Object?> get props => [displayName, enabled];
@@ -94,7 +83,6 @@ class ToggleDisplayEnabled extends DisplaySettingsEvent {
 
 class SetPrimaryDisplay extends DisplaySettingsEvent {
   final String displayName;
-
   const SetPrimaryDisplay(this.displayName);
 
   @override
@@ -104,8 +92,7 @@ class SetPrimaryDisplay extends DisplaySettingsEvent {
 class SetMirrorMode extends DisplaySettingsEvent {
   final String sourceDisplay;
   final String? targetDisplay;
-
-  const SetMirrorMode({required this.sourceDisplay, this.targetDisplay});
+  const SetMirrorMode(this.sourceDisplay, this.targetDisplay);
 
   @override
   List<Object?> get props => [sourceDisplay, targetDisplay];
@@ -113,7 +100,6 @@ class SetMirrorMode extends DisplaySettingsEvent {
 
 class SaveDisplayProfile extends DisplaySettingsEvent {
   final String profileName;
-
   const SaveDisplayProfile(this.profileName);
 
   @override
@@ -122,7 +108,6 @@ class SaveDisplayProfile extends DisplaySettingsEvent {
 
 class LoadDisplayProfile extends DisplaySettingsEvent {
   final String profileName;
-
   const LoadDisplayProfile(this.profileName);
 
   @override
@@ -131,7 +116,6 @@ class LoadDisplayProfile extends DisplaySettingsEvent {
 
 class DeleteDisplayProfile extends DisplaySettingsEvent {
   final String profileName;
-
   const DeleteDisplayProfile(this.profileName);
 
   @override
@@ -140,7 +124,6 @@ class DeleteDisplayProfile extends DisplaySettingsEvent {
 
 class DisplayChangedExternally extends DisplaySettingsEvent {
   final String displayName;
-
   const DisplayChangedExternally(this.displayName);
 
   @override

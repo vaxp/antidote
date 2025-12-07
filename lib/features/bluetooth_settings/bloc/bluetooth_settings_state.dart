@@ -1,21 +1,13 @@
 import 'package:equatable/equatable.dart';
-import 'bluetooth_settings_event.dart';
+import 'package:antidote/core/services/network_service.dart';
 
-
-enum BluetoothSettingsStatus {
-  initial,
-  initializing,
-  ready,
-  error,
-}
-
+enum BluetoothSettingsStatus { initial, loading, ready, scanning, error }
 
 class BluetoothSettingsState extends Equatable {
   final BluetoothSettingsStatus status;
   final bool bluetoothEnabled;
   final bool isScanning;
-  final bool hasAdapter;
-  final String? adapterPath;
+  final BluetoothStatus? adapterStatus;
   final List<BluetoothDevice> devices;
   final String? errorMessage;
 
@@ -23,19 +15,22 @@ class BluetoothSettingsState extends Equatable {
     this.status = BluetoothSettingsStatus.initial,
     this.bluetoothEnabled = false,
     this.isScanning = false,
-    this.hasAdapter = false,
-    this.adapterPath,
+    this.adapterStatus,
     this.devices = const [],
     this.errorMessage,
   });
 
-  
+  List<BluetoothDevice> get pairedDevices =>
+      devices.where((d) => d.paired).toList();
+
+  List<BluetoothDevice> get availableDevices =>
+      devices.where((d) => !d.paired).toList();
+
   BluetoothSettingsState copyWith({
     BluetoothSettingsStatus? status,
     bool? bluetoothEnabled,
     bool? isScanning,
-    bool? hasAdapter,
-    String? adapterPath,
+    BluetoothStatus? adapterStatus,
     List<BluetoothDevice>? devices,
     String? errorMessage,
   }) {
@@ -43,8 +38,7 @@ class BluetoothSettingsState extends Equatable {
       status: status ?? this.status,
       bluetoothEnabled: bluetoothEnabled ?? this.bluetoothEnabled,
       isScanning: isScanning ?? this.isScanning,
-      hasAdapter: hasAdapter ?? this.hasAdapter,
-      adapterPath: adapterPath ?? this.adapterPath,
+      adapterStatus: adapterStatus ?? this.adapterStatus,
       devices: devices ?? this.devices,
       errorMessage: errorMessage,
     );
@@ -52,12 +46,11 @@ class BluetoothSettingsState extends Equatable {
 
   @override
   List<Object?> get props => [
-        status,
-        bluetoothEnabled,
-        isScanning,
-        hasAdapter,
-        adapterPath,
-        devices,
-        errorMessage,
-      ];
+    status,
+    bluetoothEnabled,
+    isScanning,
+    adapterStatus,
+    devices,
+    errorMessage,
+  ];
 }

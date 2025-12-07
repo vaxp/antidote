@@ -10,11 +10,20 @@ class ResolutionCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocBuilder<DisplaySettingsBloc, DisplaySettingsState>(
       buildWhen: (previous, current) =>
-          previous.currentResolution != current.currentResolution ||
-          previous.nativeResolution != current.nativeResolution ||
-          previous.availableResolutions != current.availableResolutions ||
+          previous.currentMode != current.currentMode ||
+          previous.availableModes != current.availableModes ||
           previous.displayServer != current.displayServer,
       builder: (context, state) {
+        // Get unique resolutions
+        final uniqueResolutions = <String, DisplayMode>{};
+        for (final mode in state.availableModes) {
+          final key = mode.resolution;
+          if (!uniqueResolutions.containsKey(key)) {
+            uniqueResolutions[key] = mode;
+          }
+        }
+        final resolutions = uniqueResolutions.values.toList();
+
         return SettingsCard(
           height: 180,
           child: Column(
@@ -43,13 +52,13 @@ class ResolutionCard extends StatelessWidget {
                           ),
                           decoration: BoxDecoration(
                             color: state.displayServer == 'Wayland'
-                                ? Colors.blue.withOpacity(0.2)
-                                : Colors.green.withOpacity(0.2),
+                                ? Colors.blue.withValues(alpha: 0.2)
+                                : Colors.green.withValues(alpha: 0.2),
                             borderRadius: BorderRadius.circular(6),
                             border: Border.all(
                               color: state.displayServer == 'Wayland'
-                                  ? Colors.blue.withOpacity(0.5)
-                                  : Colors.green.withOpacity(0.5),
+                                  ? Colors.blue.withValues(alpha: 0.5)
+                                  : Colors.green.withValues(alpha: 0.5),
                               width: 0.8,
                             ),
                           ),
@@ -66,19 +75,19 @@ class ResolutionCard extends StatelessWidget {
                         ),
                     ],
                   ),
-                  if (state.nativeResolution != null)
+                  if (state.currentMode != null)
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
                         Text(
-                          'Native',
+                          'Current',
                           style: TextStyle(
                             fontSize: 11,
-                            color: Colors.white.withOpacity(0.5),
+                            color: Colors.white.withValues(alpha: 0.5),
                           ),
                         ),
                         Text(
-                          '${state.nativeResolution!.width}x${state.nativeResolution!.height}',
+                          state.currentMode!.resolution,
                           style: const TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w600,
@@ -90,10 +99,10 @@ class ResolutionCard extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 12),
-              if (state.availableResolutions.isNotEmpty)
+              if (resolutions.isNotEmpty)
                 Expanded(
-                  child: DropdownButton<DisplayResolution>(
-                    value: state.currentResolution,
+                  child: DropdownButton<DisplayMode>(
+                    value: state.currentMode,
                     isExpanded: true,
                     underline: const SizedBox(),
                     dropdownColor: const Color.fromARGB(87, 12, 12, 12),
@@ -102,10 +111,10 @@ class ResolutionCard extends StatelessWidget {
                       'Select Resolution',
                       style: TextStyle(color: Colors.white54),
                     ),
-                    items: state.availableResolutions.map((resolution) {
-                      return DropdownMenuItem<DisplayResolution>(
-                        value: resolution,
-                        child: Text(resolution.toString()),
+                    items: resolutions.map((mode) {
+                      return DropdownMenuItem<DisplayMode>(
+                        value: mode,
+                        child: Text(mode.resolution),
                       );
                     }).toList(),
                     onChanged: (newValue) {

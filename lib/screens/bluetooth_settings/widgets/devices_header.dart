@@ -11,7 +11,6 @@ class DevicesHeader extends StatelessWidget {
     return BlocBuilder<BluetoothSettingsBloc, BluetoothSettingsState>(
       buildWhen: (previous, current) =>
           previous.isScanning != current.isScanning ||
-          previous.hasAdapter != current.hasAdapter ||
           previous.bluetoothEnabled != current.bluetoothEnabled ||
           previous.status != current.status,
       builder: (context, state) {
@@ -26,10 +25,9 @@ class DevicesHeader extends StatelessWidget {
                 color: Colors.white,
               ),
             ),
-            if (!state.hasAdapter &&
-                state.status != BluetoothSettingsStatus.initializing)
+            if (state.status == BluetoothSettingsStatus.error)
               const Tooltip(
-                message: "No Adapter",
+                message: 'Connection Error',
                 child: Icon(Icons.error_outline, color: Colors.redAccent),
               ),
             if (state.isScanning)
@@ -41,8 +39,7 @@ class DevicesHeader extends StatelessWidget {
             else
               IconButton(
                 onPressed:
-                    (state.status == BluetoothSettingsStatus.initializing ||
-                        !state.hasAdapter ||
+                    (state.status == BluetoothSettingsStatus.loading ||
                         !state.bluetoothEnabled)
                     ? null
                     : () {
@@ -59,8 +56,8 @@ class DevicesHeader extends StatelessWidget {
                 icon: const Icon(Icons.refresh_rounded),
                 color: state.bluetoothEnabled
                     ? Colors.white70
-                    : Colors.white.withOpacity(0.3),
-                tooltip: state.isScanning ? "Stop Scanning" : "Start Scanning",
+                    : Colors.white.withValues(alpha: 0.3),
+                tooltip: state.isScanning ? 'Stop Scanning' : 'Start Scanning',
               ),
           ],
         );

@@ -8,16 +8,39 @@ class DeviceTile extends StatelessWidget {
 
   const DeviceTile({super.key, required this.device});
 
+  IconData _getDeviceIcon() {
+    switch (device.icon) {
+      case 'audio-headset':
+        return Icons.headset;
+      case 'audio-headphones':
+        return Icons.headphones;
+      case 'phone':
+        return Icons.phone_android;
+      case 'computer':
+        return Icons.computer;
+      case 'input-keyboard':
+        return Icons.keyboard;
+      case 'input-mouse':
+        return Icons.mouse;
+      default:
+        return device.connected ? Icons.bluetooth_connected : Icons.bluetooth;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () {
         if (device.connected) {
           context.read<BluetoothSettingsBloc>().add(
-            DisconnectDevice(device.path),
+            DisconnectDevice(device.address),
+          );
+        } else if (device.paired) {
+          context.read<BluetoothSettingsBloc>().add(
+            ConnectDevice(device.address),
           );
         } else {
-          context.read<BluetoothSettingsBloc>().add(ConnectDevice(device.path));
+          context.read<BluetoothSettingsBloc>().add(PairDevice(device.address));
         }
       },
       child: GlassmorphicContainer(
@@ -28,7 +51,7 @@ class DeviceTile extends StatelessWidget {
         child: Row(
           children: [
             Icon(
-              device.connected ? Icons.bluetooth_connected : Icons.bluetooth,
+              _getDeviceIcon(),
               color: device.connected
                   ? Colors.blue
                   : (device.paired ? Colors.white : Colors.white54),
@@ -41,7 +64,7 @@ class DeviceTile extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
-                    device.name,
+                    device.name.isEmpty ? device.address : device.name,
                     style: TextStyle(
                       color: Colors.white,
                       fontWeight: device.connected
@@ -55,15 +78,15 @@ class DeviceTile extends StatelessWidget {
                   Text(
                     device.address,
                     style: TextStyle(
-                      color: Colors.white.withOpacity(0.5),
+                      color: Colors.white.withValues(alpha: 0.5),
                       fontSize: 12,
                     ),
                   ),
-                  if (device.rssi > -100)
+                  if (device.trusted)
                     Text(
-                      "${device.rssi} dBm",
+                      'Trusted',
                       style: TextStyle(
-                        color: Colors.white.withOpacity(0.4),
+                        color: Colors.green.withValues(alpha: 0.7),
                         fontSize: 11,
                       ),
                     ),
@@ -81,10 +104,10 @@ class DeviceTile extends StatelessWidget {
                       vertical: 6,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.red.withOpacity(0.2),
+                      color: Colors.red.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(
-                        color: Colors.red.withOpacity(0.4),
+                        color: Colors.red.withValues(alpha: 0.4),
                         width: 0.8,
                       ),
                     ),
@@ -104,10 +127,10 @@ class DeviceTile extends StatelessWidget {
                       vertical: 6,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.blue.withOpacity(0.2),
+                      color: Colors.blue.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(
-                        color: Colors.blue.withOpacity(0.4),
+                        color: Colors.blue.withValues(alpha: 0.4),
                         width: 0.8,
                       ),
                     ),
