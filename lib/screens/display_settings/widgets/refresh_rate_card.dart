@@ -26,22 +26,6 @@ class RefreshRateCard extends StatelessWidget {
                   color: Colors.white,
                 ),
               ),
-              const SizedBox(height: 16),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.05),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  state.refreshRate,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
               const SizedBox(height: 12),
               if (state.availableRefreshRates.isNotEmpty)
                 Expanded(

@@ -1,7 +1,6 @@
 import 'package:equatable/equatable.dart';
 import '../models/display_resolution.dart';
 
-
 abstract class DisplaySettingsEvent extends Equatable {
   const DisplaySettingsEvent();
 
@@ -9,11 +8,22 @@ abstract class DisplaySettingsEvent extends Equatable {
   List<Object?> get props => [];
 }
 
-
 class InitializeDisplaySettings extends DisplaySettingsEvent {
   const InitializeDisplaySettings();
 }
 
+class RefreshDisplays extends DisplaySettingsEvent {
+  const RefreshDisplays();
+}
+
+class SelectDisplay extends DisplaySettingsEvent {
+  final String displayName;
+
+  const SelectDisplay(this.displayName);
+
+  @override
+  List<Object?> get props => [displayName];
+}
 
 class SetOrientation extends DisplaySettingsEvent {
   final String orientation;
@@ -24,7 +34,6 @@ class SetOrientation extends DisplaySettingsEvent {
   List<Object?> get props => [orientation];
 }
 
-
 class SetResolution extends DisplaySettingsEvent {
   final DisplayResolution resolution;
 
@@ -33,7 +42,6 @@ class SetResolution extends DisplaySettingsEvent {
   @override
   List<Object?> get props => [resolution];
 }
-
 
 class SetRefreshRate extends DisplaySettingsEvent {
   final String refreshRate;
@@ -44,7 +52,6 @@ class SetRefreshRate extends DisplaySettingsEvent {
   List<Object?> get props => [refreshRate];
 }
 
-
 class SetBrightness extends DisplaySettingsEvent {
   final double brightness;
 
@@ -53,7 +60,6 @@ class SetBrightness extends DisplaySettingsEvent {
   @override
   List<Object?> get props => [brightness];
 }
-
 
 class SetScale extends DisplaySettingsEvent {
   final int scale;
@@ -64,7 +70,6 @@ class SetScale extends DisplaySettingsEvent {
   List<Object?> get props => [scale];
 }
 
-
 class SetFractionalScaling extends DisplaySettingsEvent {
   final bool enabled;
 
@@ -74,12 +79,70 @@ class SetFractionalScaling extends DisplaySettingsEvent {
   List<Object?> get props => [enabled];
 }
 
-
-class SetNightLight extends DisplaySettingsEvent {
+class ToggleDisplayEnabled extends DisplaySettingsEvent {
+  final String displayName;
   final bool enabled;
 
-  const SetNightLight(this.enabled);
+  const ToggleDisplayEnabled({
+    required this.displayName,
+    required this.enabled,
+  });
 
   @override
-  List<Object?> get props => [enabled];
+  List<Object?> get props => [displayName, enabled];
+}
+
+class SetPrimaryDisplay extends DisplaySettingsEvent {
+  final String displayName;
+
+  const SetPrimaryDisplay(this.displayName);
+
+  @override
+  List<Object?> get props => [displayName];
+}
+
+class SetMirrorMode extends DisplaySettingsEvent {
+  final String sourceDisplay;
+  final String? targetDisplay;
+
+  const SetMirrorMode({required this.sourceDisplay, this.targetDisplay});
+
+  @override
+  List<Object?> get props => [sourceDisplay, targetDisplay];
+}
+
+class SaveDisplayProfile extends DisplaySettingsEvent {
+  final String profileName;
+
+  const SaveDisplayProfile(this.profileName);
+
+  @override
+  List<Object?> get props => [profileName];
+}
+
+class LoadDisplayProfile extends DisplaySettingsEvent {
+  final String profileName;
+
+  const LoadDisplayProfile(this.profileName);
+
+  @override
+  List<Object?> get props => [profileName];
+}
+
+class DeleteDisplayProfile extends DisplaySettingsEvent {
+  final String profileName;
+
+  const DeleteDisplayProfile(this.profileName);
+
+  @override
+  List<Object?> get props => [profileName];
+}
+
+class DisplayChangedExternally extends DisplaySettingsEvent {
+  final String displayName;
+
+  const DisplayChangedExternally(this.displayName);
+
+  @override
+  List<Object?> get props => [displayName];
 }

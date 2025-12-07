@@ -6,7 +6,6 @@ import 'package:antidote/screens/display_settings/widgets/refresh_rate_card.dart
 import 'package:antidote/screens/display_settings/widgets/brightness_card.dart';
 import 'package:antidote/screens/display_settings/widgets/orientation_card.dart';
 import 'package:antidote/screens/display_settings/widgets/scale_card.dart';
-import 'package:antidote/screens/display_settings/widgets/night_light_card.dart';
 
 class SettingsGrid extends StatelessWidget {
   const SettingsGrid({super.key});
@@ -52,12 +51,6 @@ class SettingsGrid extends StatelessWidget {
                       ? (constraints.maxWidth - 24) / 2
                       : double.infinity,
                   child: const ScaleCard(),
-                ),
-                SizedBox(
-                  width: isTwoColumn
-                      ? (constraints.maxWidth - 24) / 2
-                      : double.infinity,
-                  child: const NightLightCard(),
                 ),
               ],
             );

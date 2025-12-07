@@ -1,25 +1,38 @@
+import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter/foundation.dart';
+import 'package:antidote/core/services/venom_display_service.dart';
 import 'display_settings_event.dart';
 import 'display_settings_state.dart';
-import '../services/display_service.dart';
 import '../models/display_resolution.dart';
-
+import '../../power_settings/services/power_service.dart';
 
 class DisplaySettingsBloc
     extends Bloc<DisplaySettingsEvent, DisplaySettingsState> {
-  final DisplayService _displayService;
+  DisplayService? _displayService;
+  StreamSubscription? _displayChangedSubscription;
 
-  DisplaySettingsBloc({DisplayService? displayService})
-    : _displayService = displayService ?? DisplayService(),
-      super(const DisplaySettingsState()) {
+  final Map<String, List<DisplayMode>> _modesCache = {};
+  final Map<String, RotationType> _rotationCache = {};
+  final Map<String, double> _scaleCache = {};
+
+  DisplaySettingsBloc() : super(const DisplaySettingsState()) {
     on<InitializeDisplaySettings>(_onInitializeDisplaySettings);
+    on<RefreshDisplays>(_onRefreshDisplays);
+    on<SelectDisplay>(_onSelectDisplay);
     on<SetOrientation>(_onSetOrientation);
     on<SetResolution>(_onSetResolution);
     on<SetRefreshRate>(_onSetRefreshRate);
     on<SetBrightness>(_onSetBrightness);
     on<SetScale>(_onSetScale);
     on<SetFractionalScaling>(_onSetFractionalScaling);
-    on<SetNightLight>(_onSetNightLight);
+    on<ToggleDisplayEnabled>(_onToggleDisplayEnabled);
+    on<SetPrimaryDisplay>(_onSetPrimaryDisplay);
+    on<SetMirrorMode>(_onSetMirrorMode);
+    on<SaveDisplayProfile>(_onSaveDisplayProfile);
+    on<LoadDisplayProfile>(_onLoadDisplayProfile);
+    on<DeleteDisplayProfile>(_onDeleteDisplayProfile);
+    on<DisplayChangedExternally>(_onDisplayChangedExternally);
   }
 
   Future<void> _onInitializeDisplaySettings(
@@ -28,89 +41,175 @@ class DisplaySettingsBloc
   ) async {
     emit(state.copyWith(status: DisplaySettingsStatus.loading));
 
+    _displayService = DisplayService();
+    final connected = await _displayService!.connect().timeout(
+      const Duration(seconds: 3),
+      onTimeout: () => false,
+    );
+
+    if (!connected) {
+      emit(
+        state.copyWith(
+          status: DisplaySettingsStatus.error,
+          errorMessage: 'Failed to connect to Display Daemon',
+        ),
+      );
+      return;
+    }
+
+    _displayChangedSubscription?.cancel();
+    _displayChangedSubscription = _displayService!.displayChangedStream.listen((
+      name,
+    ) {
+      add(DisplayChangedExternally(name));
+    });
+
     try {
-      
-      final displayServer = await _displayService.detectDisplayServer();
-      emit(state.copyWith(displayServer: displayServer));
+      final displays = await _displayService!.getDisplays();
+      final profiles = await _displayService!.getProfiles();
 
-      
-      final displayInfo = await _displayService.getX11DisplayInfo();
-      final availableResolutions = await _displayService
-          .getX11AvailableResolutions();
-
-      DisplayResolution? currentResolution;
-      DisplayResolution? nativeResolution;
-      List<String> availableRefreshRates = [];
-
-      if (displayInfo.isNotEmpty) {
-        final width = displayInfo['width'] as int;
-        final height = displayInfo['height'] as int;
-        final aspectRatio = displayInfo['aspectRatio'] as String;
-
-        currentResolution = DisplayResolution(
-          width: width,
-          height: height,
-          aspectRatio: aspectRatio,
-        );
-
-        
-        if (availableResolutions.isNotEmpty) {
-          nativeResolution = availableResolutions.firstWhere(
-            (r) => r.isNative,
-            orElse: () => availableResolutions.first,
-          );
-        }
-
-        availableRefreshRates = await _displayService
-            .getX11AvailableRefreshRates(width, height);
-      }
-
-      
-      final brightnessInfo = await _displayService.initBrightness();
-
-      
-      final nightLight = await _displayService.getNightLightStatus();
-
-      
-      final scale = await _displayService.getScale();
+      final connectedDisplays = displays.where((d) => d.isConnected).toList();
 
       emit(
         state.copyWith(
           status: DisplaySettingsStatus.loaded,
-          orientation: displayInfo['orientation'] as String? ?? 'Landscape',
-          currentResolution: currentResolution,
-          nativeResolution: nativeResolution,
-          availableResolutions: availableResolutions,
-          refreshRate: displayInfo['refreshRate'] as String? ?? '60.00 Hz',
-          availableRefreshRates: availableRefreshRates,
-          scale: scale,
-          brightness: brightnessInfo['brightness'] as double,
-          maxBrightness: brightnessInfo['maxBrightness'] as double,
-          brightnessSupported: brightnessInfo['brightnessSupported'] as bool,
-          brightnessMethod: brightnessInfo['brightnessMethod'] as String,
-          nightLight: nightLight,
+          displayServer: 'X11 (Daemon)',
+          displays: connectedDisplays,
+          displayProfiles: profiles,
         ),
       );
+
+      if (connectedDisplays.isEmpty) {
+        return;
+      }
+
+      final primary = connectedDisplays.firstWhere(
+        (d) => d.isPrimary,
+        orElse: () => connectedDisplays.first,
+      );
+
+      add(SelectDisplay(primary.name));
+
+      _loadBrightnessInBackground(emit);
     } catch (e) {
+      debugPrint('Display init error: $e');
       emit(
         state.copyWith(
           status: DisplaySettingsStatus.error,
-          errorMessage: 'Failed to initialize display settings: $e',
+          errorMessage: 'Failed to load display settings: $e',
         ),
       );
     }
+  }
+
+  Future<void> _loadBrightnessInBackground(
+    Emitter<DisplaySettingsState> emit,
+  ) async {
+    final powerService = PowerService();
+    try {
+      final connected = await powerService.connect();
+      if (connected) {
+        final current = await powerService.getBrightness();
+        final max = await powerService.getMaxBrightness();
+        await powerService.disconnect();
+
+        if (max > 0) {
+          emit(
+            state.copyWith(
+              brightness: (current / max * 100).clamp(0.0, 100.0),
+              maxBrightness: max.toDouble(),
+              brightnessSupported: true,
+              brightnessMethod: 'venom_power',
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      debugPrint('Brightness init error: $e');
+    } finally {
+      await powerService.disconnect();
+    }
+  }
+
+  Future<void> _onRefreshDisplays(
+    RefreshDisplays event,
+    Emitter<DisplaySettingsState> emit,
+  ) async {
+    if (_displayService == null) return;
+
+    final displays = await _displayService!.getDisplays();
+    final connected = displays.where((d) => d.isConnected).toList();
+
+    emit(state.copyWith(displays: connected));
+  }
+
+  Future<void> _onSelectDisplay(
+    SelectDisplay event,
+    Emitter<DisplaySettingsState> emit,
+  ) async {
+    if (_displayService == null) return;
+
+    emit(state.copyWith(selectedDisplayName: event.displayName));
+
+    List<DisplayMode> modes;
+    RotationType rotation;
+    double scale;
+
+    if (_modesCache.containsKey(event.displayName)) {
+      modes = _modesCache[event.displayName]!;
+      rotation = _rotationCache[event.displayName]!;
+      scale = _scaleCache[event.displayName]!;
+    } else {
+      modes = await _displayService!.getModes(event.displayName);
+      rotation = await _displayService!.getRotation(event.displayName);
+      scale = await _displayService!.getScale(event.displayName);
+
+      _modesCache[event.displayName] = modes;
+      _rotationCache[event.displayName] = rotation;
+      _scaleCache[event.displayName] = scale;
+    }
+
+    final display = state.displays.firstWhere(
+      (d) => d.name == event.displayName,
+      orElse: () => state.displays.first,
+    );
+
+    final resolutions = _modesToResolutions(modes);
+    final refreshRates = _getRefreshRatesForResolution(
+      modes,
+      display.width,
+      display.height,
+    );
+
+    emit(
+      state.copyWith(
+        currentResolution: DisplayResolution(
+          width: display.width,
+          height: display.height,
+          aspectRatio: _calculateAspectRatio(display.width, display.height),
+        ),
+        availableResolutions: resolutions,
+        refreshRate: display.rateString,
+        availableRefreshRates: refreshRates,
+        orientation: _rotationToOrientation(rotation),
+        scale: (scale * 100).round(),
+      ),
+    );
   }
 
   Future<void> _onSetOrientation(
     SetOrientation event,
     Emitter<DisplaySettingsState> emit,
   ) async {
-    final success = await _displayService.setOrientation(
-      event.orientation,
-      state.displayServer,
-    );
+    final displayName = state.selectedDisplayName;
+    if (displayName == null || _displayService == null) return;
+
+    emit(state.copyWith(orientation: event.orientation));
+
+    final rotation = _orientationToRotation(event.orientation);
+    final success = await _displayService!.setRotation(displayName, rotation);
     if (success) {
-      emit(state.copyWith(orientation: event.orientation));
+      _rotationCache[displayName] = rotation;
     }
   }
 
@@ -118,12 +217,21 @@ class DisplaySettingsBloc
     SetResolution event,
     Emitter<DisplaySettingsState> emit,
   ) async {
-    final success = await _displayService.setResolution(event.resolution);
-    if (success) {
-      emit(state.copyWith(currentResolution: event.resolution));
+    final displayName = state.selectedDisplayName;
+    if (displayName == null || _displayService == null) return;
 
-      
-      final refreshRates = await _displayService.getX11AvailableRefreshRates(
+    emit(state.copyWith(currentResolution: event.resolution));
+
+    final success = await _displayService!.setResolution(
+      displayName,
+      event.resolution.width,
+      event.resolution.height,
+    );
+
+    if (success) {
+      final modes = _modesCache[displayName] ?? [];
+      final refreshRates = _getRefreshRatesForResolution(
+        modes,
         event.resolution.width,
         event.resolution.height,
       );
@@ -135,10 +243,14 @@ class DisplaySettingsBloc
     SetRefreshRate event,
     Emitter<DisplaySettingsState> emit,
   ) async {
-    final success = await _displayService.setRefreshRate(event.refreshRate);
-    if (success) {
-      emit(state.copyWith(refreshRate: event.refreshRate));
-    }
+    final displayName = state.selectedDisplayName;
+    if (displayName == null || _displayService == null) return;
+
+    emit(state.copyWith(refreshRate: event.refreshRate));
+
+    final rate =
+        double.tryParse(event.refreshRate.replaceAll(' Hz', '')) ?? 60.0;
+    await _displayService!.setRefreshRate(displayName, rate);
   }
 
   Future<void> _onSetBrightness(
@@ -146,20 +258,35 @@ class DisplaySettingsBloc
     Emitter<DisplaySettingsState> emit,
   ) async {
     emit(state.copyWith(brightness: event.brightness));
-    await _displayService.setBrightness(
-      event.brightness,
-      state.brightnessMethod,
-      state.maxBrightness,
-    );
+
+    if (state.brightnessMethod == 'venom_power') {
+      final powerService = PowerService();
+      try {
+        final connected = await powerService.connect();
+        if (connected) {
+          final absoluteValue = (event.brightness / 100.0 * state.maxBrightness)
+              .round();
+          await powerService.setBrightness(absoluteValue);
+        }
+      } finally {
+        await powerService.disconnect();
+      }
+    }
   }
 
   Future<void> _onSetScale(
     SetScale event,
     Emitter<DisplaySettingsState> emit,
   ) async {
-    final success = await _displayService.setScale(event.scale);
+    final displayName = state.selectedDisplayName;
+    if (displayName == null || _displayService == null) return;
+
+    emit(state.copyWith(scale: event.scale));
+
+    final scale = event.scale / 100.0;
+    final success = await _displayService!.setScale(displayName, scale);
     if (success) {
-      emit(state.copyWith(scale: event.scale));
+      _scaleCache[displayName] = scale;
     }
   }
 
@@ -167,25 +294,175 @@ class DisplaySettingsBloc
     SetFractionalScaling event,
     Emitter<DisplaySettingsState> emit,
   ) async {
-    final success = await _displayService.setFractionalScaling(event.enabled);
+    emit(state.copyWith(fractionalScaling: event.enabled));
+  }
+
+  Future<void> _onToggleDisplayEnabled(
+    ToggleDisplayEnabled event,
+    Emitter<DisplaySettingsState> emit,
+  ) async {
+    if (_displayService == null) return;
+
+    bool success;
+    if (event.enabled) {
+      success = await _displayService!.enableOutput(event.displayName);
+    } else {
+      success = await _displayService!.disableOutput(event.displayName);
+    }
     if (success) {
-      emit(state.copyWith(fractionalScaling: event.enabled));
+      add(const RefreshDisplays());
     }
   }
 
-  Future<void> _onSetNightLight(
-    SetNightLight event,
+  Future<void> _onSetPrimaryDisplay(
+    SetPrimaryDisplay event,
     Emitter<DisplaySettingsState> emit,
   ) async {
-    final success = await _displayService.setNightLight(event.enabled);
+    if (_displayService == null) return;
+
+    final success = await _displayService!.setPrimary(event.displayName);
     if (success) {
-      emit(state.copyWith(nightLight: event.enabled));
+      add(const RefreshDisplays());
+    }
+  }
+
+  Future<void> _onSetMirrorMode(
+    SetMirrorMode event,
+    Emitter<DisplaySettingsState> emit,
+  ) async {
+    if (_displayService == null) return;
+
+    bool success;
+    if (event.targetDisplay != null) {
+      success = await _displayService!.setMirror(
+        event.sourceDisplay,
+        event.targetDisplay!,
+      );
+    } else {
+      success = await _displayService!.disableMirror(event.sourceDisplay);
+    }
+    if (success) {
+      add(const RefreshDisplays());
+    }
+  }
+
+  Future<void> _onSaveDisplayProfile(
+    SaveDisplayProfile event,
+    Emitter<DisplaySettingsState> emit,
+  ) async {
+    if (_displayService == null) return;
+
+    final success = await _displayService!.saveProfile(event.profileName);
+    if (success) {
+      final profiles = await _displayService!.getProfiles();
+      emit(state.copyWith(displayProfiles: profiles));
+    }
+  }
+
+  Future<void> _onLoadDisplayProfile(
+    LoadDisplayProfile event,
+    Emitter<DisplaySettingsState> emit,
+  ) async {
+    if (_displayService == null) return;
+
+    final success = await _displayService!.loadProfile(event.profileName);
+    if (success) {
+      _modesCache.clear();
+      _rotationCache.clear();
+      _scaleCache.clear();
+      add(const RefreshDisplays());
+    }
+  }
+
+  Future<void> _onDeleteDisplayProfile(
+    DeleteDisplayProfile event,
+    Emitter<DisplaySettingsState> emit,
+  ) async {
+    if (_displayService == null) return;
+
+    final success = await _displayService!.deleteProfile(event.profileName);
+    if (success) {
+      final profiles = await _displayService!.getProfiles();
+      emit(state.copyWith(displayProfiles: profiles));
+    }
+  }
+
+  Future<void> _onDisplayChangedExternally(
+    DisplayChangedExternally event,
+    Emitter<DisplaySettingsState> emit,
+  ) async {
+    _modesCache.remove(event.displayName);
+    _rotationCache.remove(event.displayName);
+    _scaleCache.remove(event.displayName);
+    add(const RefreshDisplays());
+  }
+
+  List<DisplayResolution> _modesToResolutions(List<DisplayMode> modes) {
+    final seen = <String>{};
+    final resolutions = <DisplayResolution>[];
+    for (final mode in modes) {
+      final key = '${mode.width}x${mode.height}';
+      if (!seen.contains(key)) {
+        seen.add(key);
+        resolutions.add(
+          DisplayResolution(
+            width: mode.width,
+            height: mode.height,
+            aspectRatio: _calculateAspectRatio(mode.width, mode.height),
+          ),
+        );
+      }
+    }
+    return resolutions;
+  }
+
+  List<String> _getRefreshRatesForResolution(
+    List<DisplayMode> modes,
+    int width,
+    int height,
+  ) {
+    return modes
+        .where((m) => m.width == width && m.height == height)
+        .map((m) => m.rateString)
+        .toList();
+  }
+
+  String _calculateAspectRatio(int width, int height) {
+    int gcd(int a, int b) => b == 0 ? a : gcd(b, a % b);
+    final g = gcd(width, height);
+    return '${width ~/ g}:${height ~/ g}';
+  }
+
+  String _rotationToOrientation(RotationType rotation) {
+    switch (rotation) {
+      case RotationType.left:
+        return 'Portrait Left';
+      case RotationType.right:
+        return 'Portrait Right';
+      case RotationType.inverted:
+        return 'Landscape Inverted';
+      default:
+        return 'Landscape';
+    }
+  }
+
+  RotationType _orientationToRotation(String orientation) {
+    switch (orientation) {
+      case 'Portrait Left':
+        return RotationType.left;
+      case 'Portrait Right':
+        return RotationType.right;
+      case 'Landscape Inverted':
+        return RotationType.inverted;
+      default:
+        return RotationType.normal;
     }
   }
 
   @override
   Future<void> close() {
-    _displayService.dispose();
+    _displayChangedSubscription?.cancel();
+    _displayService?.disconnect();
     return super.close();
   }
 }

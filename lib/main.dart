@@ -105,7 +105,12 @@ class _SettingsHomePageState extends State<SettingsHomePage> {
                 ],
               ),
             ),
-            Expanded(child: settingsPages[_selectedIndex].page),
+            Expanded(
+              child: IndexedStack(
+                index: _selectedIndex,
+                children: settingsPages.map((e) => e.page).toList(),
+              ),
+            ),
           ],
         ),
       ),

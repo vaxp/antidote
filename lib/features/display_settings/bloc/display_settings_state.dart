@@ -1,35 +1,27 @@
 import 'package:equatable/equatable.dart';
 import '../models/display_resolution.dart';
-
+import 'package:antidote/core/services/venom_display_service.dart';
 
 enum DisplaySettingsStatus { initial, loading, loaded, error }
 
-
 class DisplaySettingsState extends Equatable {
   final DisplaySettingsStatus status;
-
-  
-  final String displayServer; 
+  final String displayServer;
   final String orientation;
   final DisplayResolution? currentResolution;
   final DisplayResolution? nativeResolution;
   final List<DisplayResolution> availableResolutions;
   final String refreshRate;
   final List<String> availableRefreshRates;
-
-  
   final int scale;
   final bool fractionalScaling;
-
-  
   final double brightness;
   final double maxBrightness;
   final bool brightnessSupported;
   final String brightnessMethod;
-
-  
-  final bool nightLight;
-
+  final List<DisplayInfo> displays;
+  final String? selectedDisplayName;
+  final List<String> displayProfiles;
   final String? errorMessage;
 
   const DisplaySettingsState({
@@ -47,11 +39,21 @@ class DisplaySettingsState extends Equatable {
     this.maxBrightness = 100.0,
     this.brightnessSupported = false,
     this.brightnessMethod = 'none',
-    this.nightLight = false,
+    this.displays = const [],
+    this.selectedDisplayName,
+    this.displayProfiles = const [],
     this.errorMessage,
   });
 
-  
+  DisplayInfo? get selectedDisplay {
+    if (selectedDisplayName == null || displays.isEmpty) return null;
+    try {
+      return displays.firstWhere((d) => d.name == selectedDisplayName);
+    } catch (_) {
+      return displays.isNotEmpty ? displays.first : null;
+    }
+  }
+
   DisplaySettingsState copyWith({
     DisplaySettingsStatus? status,
     String? displayServer,
@@ -67,7 +69,9 @@ class DisplaySettingsState extends Equatable {
     double? maxBrightness,
     bool? brightnessSupported,
     String? brightnessMethod,
-    bool? nightLight,
+    List<DisplayInfo>? displays,
+    String? selectedDisplayName,
+    List<String>? displayProfiles,
     String? errorMessage,
   }) {
     return DisplaySettingsState(
@@ -86,7 +90,9 @@ class DisplaySettingsState extends Equatable {
       maxBrightness: maxBrightness ?? this.maxBrightness,
       brightnessSupported: brightnessSupported ?? this.brightnessSupported,
       brightnessMethod: brightnessMethod ?? this.brightnessMethod,
-      nightLight: nightLight ?? this.nightLight,
+      displays: displays ?? this.displays,
+      selectedDisplayName: selectedDisplayName ?? this.selectedDisplayName,
+      displayProfiles: displayProfiles ?? this.displayProfiles,
       errorMessage: errorMessage,
     );
   }
@@ -107,7 +113,9 @@ class DisplaySettingsState extends Equatable {
     maxBrightness,
     brightnessSupported,
     brightnessMethod,
-    nightLight,
+    displays,
+    selectedDisplayName,
+    displayProfiles,
     errorMessage,
   ];
 }

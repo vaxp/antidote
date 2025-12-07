@@ -89,23 +89,6 @@ class ResolutionCard extends StatelessWidget {
                     ),
                 ],
               ),
-              const SizedBox(height: 16),
-              if (state.currentResolution != null)
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.05),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    '${state.currentResolution!.width}x${state.currentResolution!.height} (${state.currentResolution!.aspectRatio})',
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
               const SizedBox(height: 12),
               if (state.availableResolutions.isNotEmpty)
                 Expanded(

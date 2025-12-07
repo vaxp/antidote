@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:antidote/features/display_settings/display_settings.dart';
 import 'package:antidote/screens/display_settings/widgets/display_header.dart';
+import 'package:antidote/screens/display_settings/widgets/display_selector.dart';
 import 'package:antidote/screens/display_settings/widgets/settings_grid.dart';
-import 'package:antidote/screens/display_settings/widgets/fractional_scaling_section.dart';
-
+import 'package:antidote/screens/display_settings/widgets/display_profiles_section.dart';
 
 class DisplaySettingsPage extends StatelessWidget {
   const DisplaySettingsPage({super.key});
@@ -19,7 +19,6 @@ class DisplaySettingsPage extends StatelessWidget {
   }
 }
 
-
 class DisplaySettingsView extends StatelessWidget {
   const DisplaySettingsView({super.key});
 
@@ -33,10 +32,12 @@ class DisplaySettingsView extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const DisplayHeader(),
-            const SizedBox(height: 48),
+            const SizedBox(height: 32),
+            const DisplaySelector(),
+            const SizedBox(height: 24),
             const SettingsGrid(),
             const SizedBox(height: 24),
-            const FractionalScalingSection(),
+            const DisplayProfilesSection(),
           ],
         ),
       ),
