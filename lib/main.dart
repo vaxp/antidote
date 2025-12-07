@@ -33,6 +33,9 @@ class VenomLabApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
+      scrollBehavior: const MaterialScrollBehavior().copyWith(
+        scrollbars: false,
+      ),
       theme: ThemeData(
         useMaterial3: true,
         scaffoldBackgroundColor: Colors.transparent,
@@ -74,18 +77,13 @@ class _SettingsHomePageState extends State<SettingsHomePage> {
                 children: [
                   const SizedBox(height: 24),
                   Expanded(
-                    child: ScrollConfiguration(
-                      behavior: ScrollConfiguration.of(
-                        context,
-                      ).copyWith(scrollbars: false),
-                      child: ListView.builder(
-                        itemCount: settingsPages.length,
-                        itemBuilder: (context, index) {
-                          final item = settingsPages[index];
-                          final isSelected = _selectedIndex == index;
-                          return _buildNavItem(item, index, isSelected);
-                        },
-                      ),
+                    child: ListView.builder(
+                      itemCount: settingsPages.length,
+                      itemBuilder: (context, index) {
+                        final item = settingsPages[index];
+                        final isSelected = _selectedIndex == index;
+                        return _buildNavItem(item, index, isSelected);
+                      },
                     ),
                   ),
                 ],
