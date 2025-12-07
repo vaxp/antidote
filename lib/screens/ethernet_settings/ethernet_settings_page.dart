@@ -223,19 +223,15 @@ class _InterfaceTile extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(
-                iface.connected
-                    ? 'Connected'
-                    : (iface.enabled ? 'Enabled' : 'Disabled'),
+                iface.connected ? 'Connected' : 'Disconnected',
                 style: TextStyle(
-                  color: iface.connected
-                      ? Colors.greenAccent
-                      : (iface.enabled ? Colors.white54 : Colors.white38),
+                  color: iface.connected ? Colors.greenAccent : Colors.white38,
                   fontSize: 12,
                 ),
               ),
               const SizedBox(height: 8),
               Switch(
-                value: iface.enabled,
+                value: iface.connected,
                 onChanged: (enabled) {
                   if (enabled) {
                     context.read<EthernetSettingsBloc>().add(
