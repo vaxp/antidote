@@ -1,20 +1,23 @@
 import 'package:flutter/material.dart';
 
-
 class VolumeSlider extends StatelessWidget {
   final String label;
-  final double value;
+  final int value;
   final IconData icon;
-  final double max;
-  final ValueChanged<double> onChanged;
+  final int max;
+  final bool muted;
+  final ValueChanged<int> onChanged;
+  final VoidCallback? onMuteToggle;
 
   const VolumeSlider({
     super.key,
     required this.label,
     required this.value,
     required this.icon,
-    this.max = 100.0,
+    this.max = 100,
+    this.muted = false,
     required this.onChanged,
+    this.onMuteToggle,
   });
 
   @override
@@ -24,7 +27,7 @@ class VolumeSlider extends StatelessWidget {
       children: [
         Row(
           children: [
-            Icon(icon, size: 18, color: Colors.white70),
+            Icon(icon, size: 18, color: muted ? Colors.red : Colors.white70),
             const SizedBox(width: 8),
             Text(
               label,
@@ -34,69 +37,49 @@ class VolumeSlider extends StatelessWidget {
                 color: Colors.white,
               ),
             ),
+            const Spacer(),
+            Text(
+              '$value%',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                color: muted
+                    ? Colors.grey
+                    : (value > 100 ? Colors.orange : Colors.white),
+              ),
+            ),
+            if (onMuteToggle != null) ...[
+              const SizedBox(width: 8),
+              IconButton(
+                icon: Icon(
+                  muted ? Icons.volume_off : Icons.volume_up,
+                  color: muted ? Colors.red : Colors.white54,
+                  size: 20,
+                ),
+                onPressed: onMuteToggle,
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+              ),
+            ],
           ],
         ),
         const SizedBox(height: 12),
         SliderTheme(
           data: SliderThemeData(
             trackHeight: 4,
-            activeTrackColor: Colors.blueAccent,
-            inactiveTrackColor: Colors.white.withOpacity(0.2),
+            activeTrackColor: muted
+                ? Colors.grey
+                : (value > 100 ? Colors.orange : Colors.blueAccent),
+            inactiveTrackColor: Colors.white.withValues(alpha: 0.2),
             thumbColor: Colors.white,
             overlayShape: SliderComponentShape.noOverlay,
             thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 8),
           ),
           child: Slider(
-            value: value.clamp(0.0, max),
+            value: value.toDouble().clamp(0, max.toDouble()),
             min: 0,
-            max: max,
-            onChanged: onChanged,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-
-class BalanceSlider extends StatelessWidget {
-  final double balance;
-  final ValueChanged<double> onChanged;
-
-  const BalanceSlider({
-    super.key,
-    required this.balance,
-    required this.onChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Balance',
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-            color: Colors.white,
-          ),
-        ),
-        const SizedBox(height: 12),
-        SliderTheme(
-          data: SliderThemeData(
-            trackHeight: 4,
-            activeTrackColor: Colors.white.withOpacity(0.2),
-            inactiveTrackColor: Colors.white.withOpacity(0.2),
-            thumbColor: Colors.white,
-            overlayShape: SliderComponentShape.noOverlay,
-            thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 8),
-          ),
-          child: Slider(
-            value: balance.clamp(0.0, 100.0),
-            min: 0,
-            max: 100,
-            onChanged: onChanged,
+            max: max.toDouble(),
+            onChanged: (v) => onChanged(v.round()),
           ),
         ),
       ],

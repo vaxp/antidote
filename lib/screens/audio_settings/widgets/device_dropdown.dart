@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:antidote/features/audio_settings/audio_settings.dart';
-
+import 'package:antidote/core/services/audio_service.dart';
 
 class DeviceDropdown extends StatelessWidget {
   final String label;
@@ -8,8 +7,6 @@ class DeviceDropdown extends StatelessWidget {
   final List<AudioDevice> devices;
   final IconData icon;
   final ValueChanged<AudioDevice> onChanged;
-  final bool showTestButton;
-  final VoidCallback? onTest;
 
   const DeviceDropdown({
     super.key,
@@ -18,8 +15,6 @@ class DeviceDropdown extends StatelessWidget {
     required this.devices,
     required this.icon,
     required this.onChanged,
-    this.showTestButton = false,
-    this.onTest,
   });
 
   @override
@@ -39,32 +34,26 @@ class DeviceDropdown extends StatelessWidget {
                 color: Colors.white,
               ),
             ),
-            if (showTestButton && onTest != null) ...[
-              const Spacer(),
-              TextButton(
-                onPressed: onTest,
-                child: const Text(
-                  'Test...',
-                  style: TextStyle(color: Colors.blueAccent),
-                ),
-              ),
-            ],
           ],
         ),
         const SizedBox(height: 8),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.05),
+            color: Colors.white.withValues(alpha: 0.05),
             borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: Colors.white.withOpacity(0.1)),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
           ),
           child: DropdownButton<AudioDevice>(
-            value: selectedDevice,
+            value: devices.contains(selectedDevice) ? selectedDevice : null,
             isExpanded: true,
             underline: const SizedBox(),
             dropdownColor: const Color.fromARGB(255, 18, 22, 32),
             style: const TextStyle(color: Colors.white, fontSize: 13),
+            hint: const Text(
+              'Select device',
+              style: TextStyle(color: Colors.white54),
+            ),
             items: devices.map((device) {
               return DropdownMenuItem<AudioDevice>(
                 value: device,

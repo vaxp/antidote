@@ -6,7 +6,6 @@ import 'device_dropdown.dart';
 import 'sliders.dart';
 import 'common_widgets.dart';
 
-
 class OutputSection extends StatelessWidget {
   const OutputSection({super.key});
 
@@ -25,32 +24,27 @@ class OutputSection extends StatelessWidget {
               onChanged: (device) => context.read<AudioSettingsBloc>().add(
                 SetOutputDevice(device),
               ),
-              showTestButton: true,
-              onTest: () => context.read<AudioSettingsBloc>().add(
-                const TestAudioOutput(),
-              ),
             ),
             const SizedBox(height: 24),
             VolumeSlider(
               label: 'Output Volume',
               value: state.outputVolume,
-              icon: Icons.volume_up_rounded,
-              max: state.overamplification ? 150.0 : 100.0,
+              icon: state.outputMuted
+                  ? Icons.volume_off
+                  : Icons.volume_up_rounded,
+              max: state.maxVolume,
+              muted: state.outputMuted,
               onChanged: (value) =>
                   context.read<AudioSettingsBloc>().add(SetOutputVolume(value)),
-            ),
-            const SizedBox(height: 24),
-            BalanceSlider(
-              balance: state.balance,
-              onChanged: (value) =>
-                  context.read<AudioSettingsBloc>().add(SetBalance(value)),
+              onMuteToggle: () => context.read<AudioSettingsBloc>().add(
+                const ToggleOutputMute(),
+              ),
             ),
             const SizedBox(height: 24),
             ToggleSetting(
               label: 'Overamplification',
               value: state.overamplification,
-              description:
-                  'Allow volume to exceed 100%, with reduced sound quality',
+              description: 'Allow volume to exceed 100% (up to 150%)',
               onChanged: (value) => context.read<AudioSettingsBloc>().add(
                 SetOveramplification(value),
               ),

@@ -5,7 +5,6 @@ import 'section_container.dart';
 import 'device_dropdown.dart';
 import 'sliders.dart';
 
-
 class InputSection extends StatelessWidget {
   const InputSection({super.key});
 
@@ -28,9 +27,13 @@ class InputSection extends StatelessWidget {
             VolumeSlider(
               label: 'Input Volume',
               value: state.inputVolume,
-              icon: Icons.mic_rounded,
+              icon: state.inputMuted ? Icons.mic_off : Icons.mic_rounded,
+              muted: state.inputMuted,
               onChanged: (value) =>
                   context.read<AudioSettingsBloc>().add(SetInputVolume(value)),
+              onMuteToggle: () => context.read<AudioSettingsBloc>().add(
+                const ToggleInputMute(),
+              ),
             ),
           ],
         );

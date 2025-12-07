@@ -1,42 +1,32 @@
 import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter/foundation.dart';
+import 'package:antidote/core/services/audio_service.dart';
 import 'audio_settings_event.dart';
 import 'audio_settings_state.dart';
-import '../models/audio_device.dart';
-import '../services/audio_service.dart';
-
 
 class AudioSettingsBloc extends Bloc<AudioSettingsEvent, AudioSettingsState> {
-  final AudioService _audioService;
-  Timer? _refreshTimer;
+  AudioService? _audioService;
 
-  AudioSettingsBloc({AudioService? audioService})
-      : _audioService = audioService ?? AudioService(),
-        super(const AudioSettingsState()) {
+  // Cache
+  List<AudioDevice> _sinksCache = [];
+  List<AudioDevice> _sourcesCache = [];
+  List<AudioCard> _cardsCache = [];
+
+  AudioSettingsBloc() : super(const AudioSettingsState()) {
     on<LoadAudioSettings>(_onLoadAudioSettings);
     on<RefreshAudioInfo>(_onRefreshAudioInfo);
     on<SetOutputDevice>(_onSetOutputDevice);
-    on<SetInputDevice>(_onSetInputDevice);
     on<SetOutputVolume>(_onSetOutputVolume);
+    on<ToggleOutputMute>(_onToggleOutputMute);
+    on<SetInputDevice>(_onSetInputDevice);
     on<SetInputVolume>(_onSetInputVolume);
-    on<SetBalance>(_onSetBalance);
+    on<ToggleInputMute>(_onToggleInputMute);
+    on<SetAppVolume>(_onSetAppVolume);
+    on<ToggleAppMute>(_onToggleAppMute);
     on<SetOveramplification>(_onSetOveramplification);
-    on<TestAudioOutput>(_onTestAudioOutput);
-  }
-
-  
-  void startPeriodicRefresh() {
-    _refreshTimer?.cancel();
-    _refreshTimer = Timer.periodic(
-      const Duration(seconds: 2),
-      (_) => add(const RefreshAudioInfo()),
-    );
-  }
-
-  
-  void stopPeriodicRefresh() {
-    _refreshTimer?.cancel();
-    _refreshTimer = null;
+    on<SelectCard>(_onSelectCard);
+    on<SetProfile>(_onSetProfile);
   }
 
   Future<void> _onLoadAudioSettings(
@@ -45,56 +35,75 @@ class AudioSettingsBloc extends Bloc<AudioSettingsEvent, AudioSettingsState> {
   ) async {
     emit(state.copyWith(status: AudioSettingsStatus.loading));
 
+    _audioService = AudioService();
     try {
-      final results = await Future.wait([
-        _audioService.getOutputDevices(),
-        _audioService.getInputDevices(),
-        _audioService.getOutputVolume(),
-        _audioService.getInputVolume(),
-        _audioService.getBalance(),
-      ]);
-
-      final outputDevices = results[0] as List<AudioDevice>;
-      final inputDevices = results[1] as List<AudioDevice>;
-      final outputVolume = results[2] as double;
-      final inputVolume = results[3] as double;
-      final balance = results[4] as double;
-
-      
-      AudioDevice? selectedOutput;
-      AudioDevice? selectedInput;
-      
-      if (outputDevices.isNotEmpty) {
-        selectedOutput = outputDevices.firstWhere(
-          (d) => d.isDefault,
-          orElse: () => outputDevices.first,
-        );
-      }
-      
-      if (inputDevices.isNotEmpty) {
-        selectedInput = inputDevices.firstWhere(
-          (d) => d.isDefault,
-          orElse: () => inputDevices.first,
-        );
-      }
-
-      emit(state.copyWith(
-        status: AudioSettingsStatus.loaded,
-        outputDevices: outputDevices,
-        selectedOutputDevice: selectedOutput,
-        outputVolume: outputVolume,
-        inputDevices: inputDevices,
-        selectedInputDevice: selectedInput,
-        inputVolume: inputVolume,
-        balance: balance,
-      ));
-
-      startPeriodicRefresh();
+      await _audioService!.connect();
     } catch (e) {
-      emit(state.copyWith(
-        status: AudioSettingsStatus.error,
-        errorMessage: 'Failed to load audio settings: $e',
-      ));
+      emit(
+        state.copyWith(
+          status: AudioSettingsStatus.error,
+          errorMessage: 'Failed to connect to Audio Daemon',
+        ),
+      );
+      return;
+    }
+
+    try {
+      final volume = await _audioService!.getVolume();
+      final muted = await _audioService!.getMuted();
+      final micVolume = await _audioService!.getMicVolume();
+      final micMuted = await _audioService!.getMicMuted();
+      final overamp = await _audioService!.getOveramplification();
+      final maxVolume = await _audioService!.getMaxVolume();
+
+      _sinksCache = await _audioService!.getSinks();
+      _sourcesCache = await _audioService!.getSources();
+      _cardsCache = await _audioService!.getCards();
+
+      final appStreams = await _audioService!.getAppStreams();
+
+      AudioDevice? selectedSink;
+      AudioDevice? selectedSource;
+
+      if (_sinksCache.isNotEmpty) {
+        selectedSink = _sinksCache.firstWhere(
+          (d) => d.isDefault,
+          orElse: () => _sinksCache.first,
+        );
+      }
+
+      if (_sourcesCache.isNotEmpty) {
+        selectedSource = _sourcesCache.firstWhere(
+          (d) => d.isDefault,
+          orElse: () => _sourcesCache.first,
+        );
+      }
+
+      emit(
+        state.copyWith(
+          status: AudioSettingsStatus.loaded,
+          outputDevices: _sinksCache,
+          selectedOutputDevice: selectedSink,
+          outputVolume: volume,
+          outputMuted: muted,
+          inputDevices: _sourcesCache,
+          selectedInputDevice: selectedSource,
+          inputVolume: micVolume,
+          inputMuted: micMuted,
+          appStreams: appStreams,
+          overamplification: overamp,
+          maxVolume: maxVolume,
+          cards: _cardsCache,
+        ),
+      );
+    } catch (e) {
+      debugPrint('Audio init error: $e');
+      emit(
+        state.copyWith(
+          status: AudioSettingsStatus.error,
+          errorMessage: 'Failed to load audio settings: $e',
+        ),
+      );
     }
   }
 
@@ -102,26 +111,26 @@ class AudioSettingsBloc extends Bloc<AudioSettingsEvent, AudioSettingsState> {
     RefreshAudioInfo event,
     Emitter<AudioSettingsState> emit,
   ) async {
-    try {
-      final results = await Future.wait([
-        _audioService.getOutputVolume(),
-        _audioService.getInputVolume(),
-        _audioService.getBalance(),
-      ]);
+    if (_audioService == null) return;
 
-      emit(state.copyWith(
-        
-        // ignore: unnecessary_cast
-        outputVolume: results[0] as double,
-        
-        // ignore: unnecessary_cast
-        inputVolume: results[1] as double,
-        
-        // ignore: unnecessary_cast
-        balance: results[2] as double,
-      ));
+    try {
+      final volume = await _audioService!.getVolume();
+      final muted = await _audioService!.getMuted();
+      final micVolume = await _audioService!.getMicVolume();
+      final micMuted = await _audioService!.getMicMuted();
+      final appStreams = await _audioService!.getAppStreams();
+
+      emit(
+        state.copyWith(
+          outputVolume: volume,
+          outputMuted: muted,
+          inputVolume: micVolume,
+          inputMuted: micMuted,
+          appStreams: appStreams,
+        ),
+      );
     } catch (e) {
-      
+      debugPrint('Audio refresh error: $e');
     }
   }
 
@@ -129,64 +138,122 @@ class AudioSettingsBloc extends Bloc<AudioSettingsEvent, AudioSettingsState> {
     SetOutputDevice event,
     Emitter<AudioSettingsState> emit,
   ) async {
-    final success = await _audioService.setOutputDevice(event.device);
-    if (success) {
-      emit(state.copyWith(selectedOutputDevice: event.device));
-    }
-  }
+    if (_audioService == null) return;
 
-  Future<void> _onSetInputDevice(
-    SetInputDevice event,
-    Emitter<AudioSettingsState> emit,
-  ) async {
-    final success = await _audioService.setInputDevice(event.device);
-    if (success) {
-      emit(state.copyWith(selectedInputDevice: event.device));
-    }
+    emit(state.copyWith(selectedOutputDevice: event.device));
+    await _audioService!.setDefaultSink(event.device.name);
   }
 
   Future<void> _onSetOutputVolume(
     SetOutputVolume event,
     Emitter<AudioSettingsState> emit,
   ) async {
-    
+    if (_audioService == null) return;
+
     emit(state.copyWith(outputVolume: event.volume));
-    await _audioService.setOutputVolume(event.volume);
+    await _audioService!.setVolume(event.volume);
+  }
+
+  Future<void> _onToggleOutputMute(
+    ToggleOutputMute event,
+    Emitter<AudioSettingsState> emit,
+  ) async {
+    if (_audioService == null) return;
+
+    final newMuted = !state.outputMuted;
+    emit(state.copyWith(outputMuted: newMuted));
+    await _audioService!.setMuted(newMuted);
+  }
+
+  Future<void> _onSetInputDevice(
+    SetInputDevice event,
+    Emitter<AudioSettingsState> emit,
+  ) async {
+    if (_audioService == null) return;
+
+    emit(state.copyWith(selectedInputDevice: event.device));
+    await _audioService!.setDefaultSource(event.device.name);
   }
 
   Future<void> _onSetInputVolume(
     SetInputVolume event,
     Emitter<AudioSettingsState> emit,
   ) async {
+    if (_audioService == null) return;
+
     emit(state.copyWith(inputVolume: event.volume));
-    await _audioService.setInputVolume(event.volume);
+    await _audioService!.setMicVolume(event.volume);
   }
 
-  Future<void> _onSetBalance(
-    SetBalance event,
+  Future<void> _onToggleInputMute(
+    ToggleInputMute event,
     Emitter<AudioSettingsState> emit,
   ) async {
-    emit(state.copyWith(balance: event.balance));
-    await _audioService.setBalance(event.balance, state.outputVolume);
+    if (_audioService == null) return;
+
+    final newMuted = !state.inputMuted;
+    emit(state.copyWith(inputMuted: newMuted));
+    await _audioService!.setMicMuted(newMuted);
+  }
+
+  Future<void> _onSetAppVolume(
+    SetAppVolume event,
+    Emitter<AudioSettingsState> emit,
+  ) async {
+    if (_audioService == null) return;
+
+    await _audioService!.setAppVolume(event.appIndex, event.volume);
+    add(const RefreshAudioInfo());
+  }
+
+  Future<void> _onToggleAppMute(
+    ToggleAppMute event,
+    Emitter<AudioSettingsState> emit,
+  ) async {
+    if (_audioService == null) return;
+
+    final app = state.appStreams.firstWhere((a) => a.index == event.appIndex);
+    await _audioService!.setAppMuted(event.appIndex, !app.muted);
+    add(const RefreshAudioInfo());
   }
 
   Future<void> _onSetOveramplification(
     SetOveramplification event,
     Emitter<AudioSettingsState> emit,
   ) async {
+    if (_audioService == null) return;
+
     emit(state.copyWith(overamplification: event.enabled));
+    await _audioService!.setOveramplification(event.enabled);
+
+    final maxVolume = await _audioService!.getMaxVolume();
+    emit(state.copyWith(maxVolume: maxVolume));
   }
 
-  Future<void> _onTestAudioOutput(
-    TestAudioOutput event,
+  Future<void> _onSelectCard(
+    SelectCard event,
     Emitter<AudioSettingsState> emit,
   ) async {
-    await _audioService.testOutput();
+    if (_audioService == null) return;
+
+    emit(state.copyWith(selectedCardName: event.cardName));
+
+    final profiles = await _audioService!.getProfiles(event.cardName);
+    emit(state.copyWith(profiles: profiles));
+  }
+
+  Future<void> _onSetProfile(
+    SetProfile event,
+    Emitter<AudioSettingsState> emit,
+  ) async {
+    if (_audioService == null || state.selectedCardName == null) return;
+
+    await _audioService!.setProfile(state.selectedCardName!, event.profileName);
   }
 
   @override
   Future<void> close() {
-    stopPeriodicRefresh();
+    _audioService?.dispose();
     return super.close();
   }
 }
