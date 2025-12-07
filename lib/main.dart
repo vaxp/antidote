@@ -74,13 +74,18 @@ class _SettingsHomePageState extends State<SettingsHomePage> {
                 children: [
                   const SizedBox(height: 24),
                   Expanded(
-                    child: ListView.builder(
-                      itemCount: settingsPages.length,
-                      itemBuilder: (context, index) {
-                        final item = settingsPages[index];
-                        final isSelected = _selectedIndex == index;
-                        return _buildNavItem(item, index, isSelected);
-                      },
+                    child: ScrollConfiguration(
+                      behavior: ScrollConfiguration.of(
+                        context,
+                      ).copyWith(scrollbars: false),
+                      child: ListView.builder(
+                        itemCount: settingsPages.length,
+                        itemBuilder: (context, index) {
+                          final item = settingsPages[index];
+                          final isSelected = _selectedIndex == index;
+                          return _buildNavItem(item, index, isSelected);
+                        },
+                      ),
                     ),
                   ),
                 ],
