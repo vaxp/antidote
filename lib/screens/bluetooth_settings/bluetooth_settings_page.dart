@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:antidote/features/bluetooth_settings/bluetooth_settings.dart';
 import 'package:antidote/screens/bluetooth_settings/widgets/bluetooth_header.dart';
+import 'package:antidote/screens/bluetooth_settings/widgets/bluetooth_status_section.dart';
 import 'package:antidote/screens/bluetooth_settings/widgets/devices_header.dart';
 import 'package:antidote/screens/bluetooth_settings/widgets/devices_list.dart';
-
 
 class BluetoothSettingsPage extends StatelessWidget {
   const BluetoothSettingsPage({super.key});
@@ -18,7 +18,6 @@ class BluetoothSettingsPage extends StatelessWidget {
     );
   }
 }
-
 
 class BluetoothSettingsView extends StatelessWidget {
   const BluetoothSettingsView({super.key});
@@ -48,9 +47,11 @@ class BluetoothSettingsView extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const BluetoothHeader(),
-              const SizedBox(height: 48),
-              const DevicesHeader(),
+              const SizedBox(height: 32),
+              const BluetoothStatusSection(),
               const SizedBox(height: 24),
+              const DevicesHeader(),
+              const SizedBox(height: 16),
               const Expanded(child: DevicesList()),
             ],
           ),

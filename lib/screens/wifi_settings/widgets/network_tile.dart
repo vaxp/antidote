@@ -1,17 +1,20 @@
-import 'package:antidote/core/glassmorphic_container.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:antidote/features/wifi_settings/wifi_settings.dart';
+import 'package:antidote/core/glassmorphic_container.dart';
+import 'package:antidote/core/services/network_service.dart';
 
 class NetworkTile extends StatelessWidget {
   final WiFiNetwork network;
   final bool isConnecting;
+  final VoidCallback? onSettingsTap;
 
   const NetworkTile({
     super.key,
     required this.network,
     required this.isConnecting,
+    this.onSettingsTap,
   });
 
   @override
@@ -91,10 +94,27 @@ class NetworkTile extends StatelessWidget {
               child: CupertinoActivityIndicator(color: Colors.tealAccent),
             )
           else if (network.connected)
-            const Icon(
-              Icons.check_circle_rounded,
-              color: Colors.tealAccent,
-              size: 24,
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Settings icon for connected network
+                IconButton(
+                  icon: const Icon(Icons.settings_rounded, size: 20),
+                  color: Colors.white54,
+                  onPressed: onSettingsTap,
+                  tooltip: 'Network Settings',
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(
+                    minWidth: 36,
+                    minHeight: 36,
+                  ),
+                ),
+                const Icon(
+                  Icons.check_circle_rounded,
+                  color: Colors.tealAccent,
+                  size: 22,
+                ),
+              ],
             )
           else
             Material(

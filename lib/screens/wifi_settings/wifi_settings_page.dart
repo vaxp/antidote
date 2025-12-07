@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:antidote/features/wifi_settings/wifi_settings.dart';
 import 'package:antidote/screens/wifi_settings/widgets/wifi_header.dart';
+import 'package:antidote/screens/wifi_settings/widgets/wifi_status_section.dart';
 import 'package:antidote/screens/wifi_settings/widgets/networks_header.dart';
 import 'package:antidote/screens/wifi_settings/widgets/networks_list.dart';
 
@@ -43,9 +44,11 @@ class WiFiSettingsView extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const WifiHeader(),
-              const SizedBox(height: 48),
-              const NetworksHeader(),
+              const SizedBox(height: 32),
+              const WifiStatusSection(),
               const SizedBox(height: 24),
+              const NetworksHeader(),
+              const SizedBox(height: 16),
               const Expanded(child: NetworksList()),
             ],
           ),
