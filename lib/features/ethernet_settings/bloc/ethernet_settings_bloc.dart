@@ -74,6 +74,8 @@ class EthernetSettingsBloc
 
     final success = await _networkService!.enableEthernet(event.name);
     if (success) {
+      // Wait for daemon to establish connection
+      await Future.delayed(const Duration(milliseconds: 500));
       // Refresh to get actual state from daemon
       final interfaces = await _networkService!.getEthernetInterfaces();
       emit(state.copyWith(interfaces: interfaces));
@@ -91,7 +93,7 @@ class EthernetSettingsBloc
     final success = await _networkService!.disableEthernet(event.name);
     if (success) {
       // Wait for daemon to update state
-      await Future.delayed(const Duration(milliseconds: 500));
+      await Future.delayed(const Duration(milliseconds: 100));
       // Refresh to get actual state from daemon
       final interfaces = await _networkService!.getEthernetInterfaces();
       emit(state.copyWith(interfaces: interfaces));
